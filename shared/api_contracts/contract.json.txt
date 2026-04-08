@@ -1,0 +1,17 @@
+{
+  "task_input": {
+    "task_id": "unique string",
+    "task_type": "data_analysis | fullstack | security | devops | orchestrate",
+    "description": "what needs to be done in plain English",
+    "context": "any relevant files, code, or data as a string",
+    "priority": "high | medium | low"
+  },
+  "task_output": {
+    "task_id": "same as input",
+    "status": "success | error | partial",
+    "result": "the main output - code, report, config, etc.",
+    "summary": "one paragraph explaining what was done",
+    "next_agent": "devops | null - which agent should handle this next",
+    "logs": ["list of steps taken"]
+  }
+}
