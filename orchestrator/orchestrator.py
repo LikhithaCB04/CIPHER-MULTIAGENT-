@@ -1,4 +1,4 @@
-from langchain_community.llms import Ollama
+from langchain_ollama import OllamaLLM
 from fastapi import FastAPI
 from pydantic import BaseModel
 import requests, json
@@ -6,7 +6,7 @@ import requests, json
 app = FastAPI()
 
 # This is the 'Brain'. It uses llama3 to decide which agent to use.
-llm = Ollama(model="llama3")
+llm = OllamaLLM(model="llama3")
 
 class Task(BaseModel):
     description: str
@@ -23,7 +23,7 @@ def run_task(task: Task):
     '''
     
     # Get the decision from the AI
-    agents_raw = llm(prompt)
+    agents_raw = llm.invoke(prompt)
     try:
         agents = json.loads(agents_raw)
     except:

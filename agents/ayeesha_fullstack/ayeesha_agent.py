@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 app = FastAPI()
-llm = OllamaLLM(model="codellama")
+llm = OllamaLLM(model="ayeesha-agent")
 
 class Task(BaseModel):
     task_id: str
