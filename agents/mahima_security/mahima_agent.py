@@ -5,71 +5,101 @@ import subprocess
 import tempfile
 import os
 
-# 1. Setup the API and AI Model
 app = FastAPI()
-llm = Ollama(model="mistral") 
+llm = Ollama(model="mahima-agent")
 
-# 2. Define the API Contract (Exactly as per contract.json)
 class Task(BaseModel):
     task_id: str
     description: str
-    context: str  # This is the code that will be sent for auditing
+    context: str 
+
+# --- NEW: KNOWLEDGE BASE READER ---
+def load_knowledge_base():
+    knowledge_text = ""
+    kb_path = "agents/mahima_security/knowledge_base/"
+    
+    if os.path.exists(kb_path):
+        for filename in os.listdir(kb_path):
+            if filename.endswith(".txt"):
+                with open(os.path.join(kb_path, filename), 'r', encoding='utf-8') as f:
+                    knowledge_text += f"\n--- Source: {filename} ---\n{f.read()}\n"
+    return knowledge_text
 
 @app.post('/run')
 def run_security_audit(task: Task):
     logs = []
     bandit_results = ""
+    semgrep_results = ""
+    safety_results = ""
 
-    # --- PHASE 1: STATIC ANALYSIS (The Truth) ---
-    # We use Bandit to find real bugs. We save the code to a temp file first.
+    # 1. Load the Knowledge Base (The "Truth" files)
+    knowledge = load_knowledge_base()
+    logs.append("Knowledge base loaded.")
+
+    # 2. Static Analysis (Bandit & Semgrep)
     if task.context:
         with tempfile.NamedTemporaryFile(suffix='.py', mode='w', delete=False) as f:
             f.write(task.context)
             temp_path = f.name
-
         try:
-            # Run Bandit: -r (recursive), -f txt (text output)
-            process = subprocess.run(['bandit', '-r', temp_path, '-f', 'txt'], 
-                                    capture_output=True, text=True, timeout=30)
-            bandit_results = process.stdout
-            logs.append("Bandit static analysis completed.")
+            b_proc = subprocess.run(['bandit', '-r', temp_path, '-f', 'txt'], capture_output=True, text=True, timeout=30)
+            bandit_results = b_proc.stdout
+            logs.append("Bandit scan completed.")
+
+            s_proc = subprocess.run(['semgrep', 'scan', '--config', 'auto', temp_path], capture_output=True, text=True, timeout=30)
+            semgrep_results = s_proc.stdout
+            logs.append("Semgrep scan completed.")
         except Exception as e:
-            bandit_results = f"Scanner Error: {str(e)}"
-            logs.append(f"Scanner failed: {str(e)}")
+            logs.append(f"Scanner failure: {str(e)}")
         finally:
-            os.unlink(temp_path) # Clean up the temporary file
-    else:
-        logs.append("No code provided for audit.")
+            os.unlink(temp_path)
 
-    # --- PHASE 2: AI REASONING (The Expert) ---
-    # We feed the raw code AND the bandit results to Mistral to get a human report
+    # 3. Dependency Analysis (Safety)
+    try:
+        safe_proc = subprocess.run(['safety', 'check'], capture_output=True, text=True, timeout=30)
+        safety_results = safe_proc.stdout
+        logs.append("Safety scan completed.")
+    except Exception as e:
+        safety_results = f"Safety Error: {str(e)}"
+
+    # 4. AI REASONING with Knowledge Base integration
+    examples = """
+    EXAMPLE:
+    INPUT: os.system('ls')
+    KNOWLEDGE: OWASP #3 Injection - avoid os.system()
+    RESULT: REJECTED. High Risk. Use subprocess.run() instead.
+    """
+
     system_prompt = f"""
-    You are a Senior Cybersecurity Analyst with OWASP expertise. 
-    Your job is to audit the following code and the results of a Bandit scan.
-
-    CODE TO AUDIT:
-    {task.context}
-
-    BANDIT SCAN RESULTS:
-    {bandit_results}
-
-    Please provide a professional Security Audit Report:
-    1. RISK LEVEL: (Critical/High/Medium/Low)
-    2. VULNERABILITIES: (List exactly what is wrong)
-    3. FIXES: (Provide the corrected code snippets)
-    4. FINAL VERDICT: (Approved / Rejected)
+    You are a Senior Cybersecurity Analyst. 
+    
+    YOU MUST BASE YOUR AUDIT ON THE FOLLOWING KNOWLEDGE BASE:
+    {knowledge}
+    
+    STYLE GUIDE:
+    {examples}
+    
+    REAL TASK TO AUDIT:
+    CODE: {task.context}
+    BANDIT: {bandit_results}
+    SEMGREP: {semgrep_results}
+    SAFETY: {safety_results}
+    
+    Please provide a report:
+    - OVERALL RISK SCORE (Based on OWASP standards)
+    - TECHNICAL BREAKDOWN (Reference the OWASP rule number)
+    - DEPENDENCY ALERTS
+    - REMEDIATION
+    - FINAL VERDICT
     """
     
     security_report = llm.invoke(system_prompt)
 
-    # --- PHASE 3: RETURN RESULT (Strictly following contract.json) ---
     return {
         'task_id': task.task_id,
         'status': 'success',
         'result': security_report,
-        'summary': 'Security audit complete. Results generated using Bandit and Mistral.',
-        'next_agent': 'devops',  # This tells the orchestrator to send it to Likitha next
+        'summary': 'Knowledge-augmented security audit completed.',
+        'next_agent': 'devops',
         'logs': logs
     }
-
-# Command to run: uvicorn agents.mahima_security.mahima_agent:app --port 8003 --reload

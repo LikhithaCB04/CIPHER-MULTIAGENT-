@@ -1,0 +1,11 @@
+OWASP TOP 10 SECURITY STANDARDS:
+1. Broken Access Control: Ensure users cannot access data or functions outside their permissions.
+2. Cryptographic Failures: Avoid hardcoded keys, use AES-256, and ensure TLS 1.3 for data in transit.
+3. Injection: Never trust user input. Use parameterized queries for SQL and avoid os.system() or eval().
+4. Insecure Design: Implement a 'Secure by Design' approach; validate all business logic.
+5. Security Misconfiguration: Disable default passwords and remove unnecessary features/ports.
+6. Vulnerable and Outdated Components: Always check for CVEs in third-party libraries.
+7. Identification and Authentication Failures: Implement MFA and strong password hashing (Argon2 or bcrypt).
+8. Software and Data Integrity Failures: Use digital signatures for updates and avoid insecure deserialization.
+9. Security Logging and Monitoring Failure: Log all critical failures and set up real-time alerts.
+10. Server-Side Request Forgery (SSRF): Validate all URLs provided by the user before the server fetches them.
