@@ -1,39 +1,48 @@
-from langchain_ollama import OllamaLLM
 from fastapi import FastAPI
 from pydantic import BaseModel
+from langchain_ollama import OllamaLLM
 
 app = FastAPI()
-llm = OllamaLLM(model="ayeesha-agent")
+llm = OllamaLLM(model="llama3")
 
-class Task(BaseModel):
+class AgentInput(BaseModel):
     task_id: str
-    task_type: str = "fullstack"
     description: str
-    context: str = ''
-    priority: str = "medium"
+    context: str = ""
 
-@app.post('/run')
-def run(task: Task):
-    prompt = f'''
-    You are a senior full stack developer.
-    Task: {task.description}
-    Additional context: {task.context}
+GODLY_TEMPLATES = """
+You have access to the following premium UI templates (Godly-inspired):
+1. 'Broken Glass Card': A glassmorphism card with a shattered refraction effect.
+2. 'Interactive ASCII': A hero section that translates hover coordinates into an ASCII art ripple.
+3. 'Smooth Loader': A full-page loader with SVG path drawing and text reveal.
+4. 'Thermal Effects': A background gradient that maps to mouse movement like a thermal camera.
+5. 'Entrance Reveal': Text and images that reveal smoothly via a staggered Framer Motion mask.
+
+When a user asks for a 'powerful attractive interactive animated cool entry', use these templates.
+"""
+
+@app.post("/run")
+async def process_task(data: AgentInput):
+    prompt = f"""
+    SYSTEM: You are Ayeesha, the Expert Full-Stack Developer Agent. 
+    You create state-of-the-art React/Next.js/Vite applications.
+    {GODLY_TEMPLATES}
     
-    Generate complete, working code. Include:
-    1. Frontend component (React or plain HTML/CSS/JS)
-    2. Backend API route (FastAPI)
-    3. Database schema if needed (SQLAlchemy)
-    4. One unit test
+    TASK: {data.description}
+    CONTEXT: {data.context}
     
-    Format each section clearly with comments.
-    '''
-    code = llm.invoke(prompt)
+    Write the code and provide the implementation details.
+    RESPONSE:
+    """
+    response = llm.invoke(prompt)
     
     return {
-        'task_id': task.task_id,
-        'status': 'success',
-        'result': code,
-        'summary': 'Generated full stack code',
-        'next_agent': 'security',
-        'logs': ['Code generated successfully']
+        "task_id": data.task_id,
+        "status": "success",
+        "result": response.strip(),
+        "agent": "fullstack"
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="localhost", port=8002)
