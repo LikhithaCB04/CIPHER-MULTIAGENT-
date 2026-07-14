@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Files, Search, GitBranch, TerminalSquare, Settings, Send, Paperclip, ChevronDown, Cpu } from 'lucide-react';
 

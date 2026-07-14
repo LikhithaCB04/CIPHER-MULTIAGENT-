@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   likitha-devops-agent:
-    build: 
+    build:
       context: .
       dockerfile: agents/likitha_devops/Dockerfile
     container_name: likitha-devops-agent
@@ -34,3 +34,19 @@ services:
     image: alpine
     ports: ['8003:8003']
     command: /bin/sh -c 'while true; do sleep 3600; done'
+
+  ai-specialist-agent:
+    image: alpine
+    ports: ['8005:8005']
+    command: /bin/sh -c 'while true; do sleep 3600; done'
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./frontend:/app
+    environment:
+      - CHOKIDAR_USEPOLLING=true
