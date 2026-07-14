@@ -113,6 +113,8 @@ async def handle_file_upload(file: UploadFile = File(...)):
 
 def choose_agents(description: str):
     lowered = description.lower()
+    if any(keyword in lowered for keyword in ["clone", "repo", "repository", "git", "fix bug", "run tests", "test suite", "pytest", "npm test"]):
+        return ["ai_specialist"]
     if any(keyword in lowered for keyword in ["deploy", "docker", "kubernetes", "infra", "server", "ci/cd"]):
         return ["likitha"]
     if any(keyword in lowered for keyword in ["security", "audit", "vulnerability", "threat", "auth", "malware"]):
@@ -132,8 +134,10 @@ async def run_task(task: Task):
     prompt = f'''
     You are a task router for a multi-agent AI system.
     Given this task: {task.description}
-    Choose one or more agents from: deepthi, ayeesha, mahima, likitha, ai_specialist
-    Return ONLY a JSON list like: ["ayeesha", "ai_specialist"]
+    If the task mentions cloning a repo, a git URL, fixing a bug, or running tests,
+    route it to ai_specialist. Otherwise choose one or more agents from:
+    deepthi, ayeesha, mahima, likitha, ai_specialist.
+    Return ONLY a JSON list like: ["ai_specialist"] or ["ayeesha", "ai_specialist"]
     '''
 
     try:

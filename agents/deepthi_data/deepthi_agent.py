@@ -773,6 +773,16 @@ def run_task(task: TaskInput):
                 logs.append(f"Loaded user CSV: {df.shape}")
             except Exception:
                 pass
+
+            # Try Excel workbook content if the context looks like an uploaded spreadsheet path.
+            if df is None:
+                try:
+                    if os.path.exists(task.context):
+                        df = pd.read_excel(task.context, engine="openpyxl")
+                        data_source = "user_provided_excel"
+                        logs.append(f"Loaded user Excel: {df.shape}")
+                except Exception:
+                    pass
  
             # Try JSON
             if df is None:
