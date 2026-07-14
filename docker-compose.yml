@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
   ollama:
@@ -9,7 +9,7 @@ services:
     volumes:
       - ollama_models:/root/.ollama
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      test: ["CMD-SHELL", "ollama list || exit 1"]
       interval: 20s
       timeout: 10s
       retries: 5
@@ -18,12 +18,14 @@ services:
   ollama-init:
     image: ollama/ollama:latest
     container_name: ollama-init
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
     depends_on:
       ollama:
         condition: service_healthy
     volumes:
       - ./agents/mahima_security/Modelfile:/Modelfile:ro
-    entrypoint: ["/bin/sh", "-c", "ollama pull mistral && ollama pull codellama && ollama pull llama3 && ollama pull phi3 && ollama create mahima-agent -f /Modelfile"]
+    entrypoint: ["/bin/sh", "-c", "ollama pull phi3 && ollama create mahima-agent -f /Modelfile"]
     restart: "no"
 
   orchestrator:

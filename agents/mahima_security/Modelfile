@@ -1,4 +1,4 @@
-FROM mistral
+FROM phi3
 
 # This is the "System Prompt" that defines your agent's soul
 SYSTEM """

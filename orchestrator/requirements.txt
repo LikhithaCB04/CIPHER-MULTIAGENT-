@@ -4,3 +4,4 @@ requests
 pydantic
 httpx
 langchain-ollama
+python-multipart
