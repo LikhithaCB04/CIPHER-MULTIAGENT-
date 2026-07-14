@@ -751,6 +751,11 @@ NOTE: In standalone mode charts are saved to /tmp/agent_charts/.
 When integrated with the platform dashboard, Ayeesha's agent will render them.
 """
  
+@app.get('/health')
+def health_check():
+    return {"status": "ok"}
+
+
 # =============================================================================
 # MAIN ROUTE — matches API contract exactly
 # =============================================================================

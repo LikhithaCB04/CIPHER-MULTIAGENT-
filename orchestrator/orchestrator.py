@@ -77,6 +77,11 @@ async def broadcast(event: dict):
     connected_clients.difference_update(dead)
 
 
+@app.get('/health')
+async def health_check():
+    return {"status": "ok"}
+
+
 @app.post('/chat')
 async def chat_with_orchestrator(request: ChatRequest):
     """

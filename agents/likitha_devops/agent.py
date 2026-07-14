@@ -34,6 +34,11 @@ class TaskOutput(BaseModel):
     logs: List[str]
 
 
+@app.get('/health')
+async def health_check():
+    return {"status": "ok"}
+
+
 @app.post("/run", response_model=TaskOutput)
 async def run_devops_task(task: TaskInput):
     logs = [f"Received devops task {task.task_id}"]

@@ -36,6 +36,11 @@ def run_command(cmd: List[str], cwd: str) -> str:
     return stdout or "OK"
 
 
+@app.get('/health')
+async def health_check():
+    return {"status": "ok"}
+
+
 @app.post("/run", response_model=TaskOutput)
 async def process_task(data: Task):
     logs = [f"Repo operator received task {data.task_id}"]

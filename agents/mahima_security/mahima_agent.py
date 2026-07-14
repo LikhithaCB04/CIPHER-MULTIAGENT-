@@ -25,6 +25,11 @@ def load_knowledge_base():
                     knowledge_text += f"\n--- Source: {filename} ---\n{f.read()}\n"
     return knowledge_text
 
+@app.get('/health')
+def health_check():
+    return {'status': 'ok'}
+
+
 @app.post('/run')
 def run_security_audit(task: Task):
     logs = []

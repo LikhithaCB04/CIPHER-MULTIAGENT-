@@ -139,6 +139,11 @@ def select_template(description: str) -> str:
     return "landing"
 
 
+@app.get('/health')
+async def health_check():
+    return {"status": "ok"}
+
+
 @app.post("/run", response_model=TaskOutput)
 async def process_task(data: TaskInput):
     template_name = select_template(data.description)
