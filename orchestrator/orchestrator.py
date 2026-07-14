@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile, File, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
+import asyncio
 import requests, json, os, uuid
 
 app = FastAPI()
@@ -157,11 +158,16 @@ async def run_task(task: Task):
                 "context": task.context,
                 "priority": task.priority,
             }
-            r = requests.post(f'http://localhost:{port}/run', json=payload, timeout=40)
-            response = r.json()
-            next_agent = response.get("next_agent") or (agents[index + 1] if index + 1 < len(agents) else None)
-            summary = response.get("summary") or response.get("result") or "Agent completed."
-            results.append(response)
+            response = await asyncio.to_thread(
+                requests.post,
+                f'http://localhost:{port}/run',
+                json=payload,
+                timeout=40,
+            )
+            response_data = await asyncio.to_thread(response.json)
+            next_agent = response_data.get("next_agent") or (agents[index + 1] if index + 1 < len(agents) else None)
+            summary = response_data.get("summary") or response_data.get("result") or "Agent completed."
+            results.append(response_data)
             await broadcast({
                 "event": "agent_finished",
                 "agent": agent,

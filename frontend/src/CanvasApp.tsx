@@ -81,6 +81,12 @@ const initialNodes: Node[] = [
 ];
 
 const initialEdges: Edge[] = [];
+const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+const wsBase = apiBase.startsWith('https://')
+  ? apiBase.replace('https://', 'wss://')
+  : apiBase.startsWith('http://')
+    ? apiBase.replace('http://', 'ws://')
+    : apiBase;
 
 const AgentNode = ({ data }: { data: any }) => {
   const [expanded, setExpanded] = useState(true);
@@ -146,26 +152,28 @@ export default function CanvasApp() {
   const onConnect = useCallback((connection: Connection) => setEdges(addEdge(connection, edges)), [edges, setEdges]);
 
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:8000/ws');
+    const ws = new WebSocket(`${wsBase}/ws`);
     ws.onmessage = (event) => {
       const payload = JSON.parse(event.data) as StreamEvent;
+      const store = useCanvasStore.getState();
       if (payload.event === 'task_received') {
         setStatus('Task received');
         setTaskId(payload.task_id || '');
-        updateNode('task', { data: { ...nodes.find((node) => node.id === 'task')?.data, description: payload.description || 'Task received' } });
+        store.updateNode('task', { data: { ...(store.nodes.find((node) => node.id === 'task')?.data || {}), description: payload.description || 'Task received' } });
       }
       if (payload.event === 'agent_started') {
         setStatus(`Running ${payload.agent}`);
-        updateNode(payload.agent || '', { data: { ...nodes.find((node) => node.id === payload.agent)?.data, status: 'running', logs: [...(nodes.find((node) => node.id === payload.agent)?.data.logs || []), `Started ${payload.agent}`] } });
+        store.updateNode(payload.agent || '', { data: { ...(store.nodes.find((node) => node.id === payload.agent)?.data || {}), status: 'running', logs: [...(store.nodes.find((node) => node.id === payload.agent)?.data.logs || []), `Started ${payload.agent}`] } });
       }
       if (payload.event === 'agent_finished') {
         setStatus(`Finished ${payload.agent}`);
-        updateNode(payload.agent || '', { data: { ...nodes.find((node) => node.id === payload.agent)?.data, status: 'done', logs: [...(nodes.find((node) => node.id === payload.agent)?.data.logs || []), payload.result_summary || 'Completed'] } });
+        store.updateNode(payload.agent || '', { data: { ...(store.nodes.find((node) => node.id === payload.agent)?.data || {}), status: 'done', logs: [...(store.nodes.find((node) => node.id === payload.agent)?.data.logs || []), payload.result_summary || 'Completed'] } });
         if (payload.result_summary) {
-          addOutput(payload.agent || '', payload.result_summary || 'Completed');
+          store.addOutput(payload.agent || '', payload.result_summary || 'Completed');
         }
         if (payload.next_agent && payload.agent) {
-          setEdges([...edges, { id: `edge-${payload.agent}-${payload.next_agent}`, source: payload.agent, target: payload.next_agent, animated: true, style: { stroke: '#60a5fa' } }]);
+          const newEdge: Edge = { id: `edge-${payload.agent}-${payload.next_agent}`, source: payload.agent, target: payload.next_agent, animated: true, style: { stroke: '#60a5fa' } };
+          store.setEdges([...store.edges, newEdge]);
         }
       }
       if (payload.event === 'pipeline_complete') {
@@ -173,12 +181,12 @@ export default function CanvasApp() {
       }
     };
     return () => ws.close();
-  }, [addOutput, edges, nodes, setEdges, updateNode]);
+  }, []);
 
   const runTask = async () => {
     if (!input.trim()) return;
     setStatus('Submitting task');
-    const response = await fetch('http://localhost:8000/run', {
+    const response = await fetch(`${apiBase}/run`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ description: input, context: '', task_id: taskId || undefined }),
