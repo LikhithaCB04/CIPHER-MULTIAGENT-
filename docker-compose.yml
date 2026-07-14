@@ -21,7 +21,9 @@ services:
     depends_on:
       ollama:
         condition: service_healthy
-    entrypoint: ["/bin/sh", "-c", "ollama pull mistral && ollama pull codellama && ollama pull llama3"]
+    volumes:
+      - ./agents/mahima_security/Modelfile:/Modelfile:ro
+    entrypoint: ["/bin/sh", "-c", "ollama pull mistral && ollama pull codellama && ollama pull llama3 && ollama pull phi3 && ollama create mahima-agent -f /Modelfile"]
     restart: "no"
 
   orchestrator:
