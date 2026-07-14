@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List, Optional
@@ -6,14 +7,16 @@ try:
     from langchain_ollama import OllamaLLM
 except ImportError:  # pragma: no cover - fallback for environments without the package installed
     class OllamaLLM:
-        def __init__(self, model: str):
+        def __init__(self, model: str, base_url: str = "http://localhost:11434"):
             self.model = model
+            self.base_url = base_url
 
         def invoke(self, prompt: str) -> str:
             return f"[mock-fullstack] {self.model} responded to: {prompt[:120]}"
 
 app = FastAPI()
-llm = OllamaLLM(model="llama3")
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+llm = OllamaLLM(model="llama3", base_url=OLLAMA_BASE_URL)
 
 
 class TaskInput(BaseModel):

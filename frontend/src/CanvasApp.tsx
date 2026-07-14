@@ -137,7 +137,7 @@ const OutputNode = ({ data }: { data: any }) => (
 const nodeTypes = { task: TaskNode, agent: AgentNode, output: OutputNode };
 
 export default function CanvasApp() {
-  const { nodes, edges, setNodes, setEdges, updateNode, addOutput } = useCanvasStore();
+  const { nodes, edges, setNodes, setEdges } = useCanvasStore();
   const [input, setInput] = useState('');
   const [status, setStatus] = useState('Idle');
   const [taskId, setTaskId] = useState('');

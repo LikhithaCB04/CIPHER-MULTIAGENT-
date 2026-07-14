@@ -1,6 +1,29 @@
 version: '3.8'
 
 services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - '11434:11434'
+    volumes:
+      - ollama_models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: ollama-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c", "ollama pull mistral && ollama pull codellama && ollama pull llama3"]
+    restart: "no"
+
   orchestrator:
     build:
       context: .
@@ -8,7 +31,11 @@ services:
     container_name: master-orchestrator
     ports:
       - '8000:8000'
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
     depends_on:
+      ollama-init:
+        condition: service_completed_successfully
       deepthi-data-agent:
         condition: service_healthy
       ayeesha-fullstack-agent:
@@ -33,6 +60,11 @@ services:
     container_name: deepthi-data-agent
     ports:
       - '8001:8001'
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      ollama-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 20s
@@ -47,6 +79,11 @@ services:
     container_name: ayeesha-fullstack-agent
     ports:
       - '8002:8002'
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      ollama-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
       interval: 20s
@@ -61,6 +98,11 @@ services:
     container_name: mahima-security-agent
     ports:
       - '8003:8003'
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      ollama-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
       interval: 20s
@@ -76,7 +118,10 @@ services:
     ports:
       - '8004:8004'
     environment:
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      ollama-init:
+        condition: service_completed_successfully
     volumes:
       - ./agents/likitha_devops:/app
     healthcheck:
@@ -93,6 +138,11 @@ services:
     container_name: ai-specialist-agent
     ports:
       - '8005:8005'
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      ollama-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
       interval: 20s
@@ -114,3 +164,6 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
       - VITE_API_URL=http://localhost:8000
+
+volumes:
+  ollama_models:

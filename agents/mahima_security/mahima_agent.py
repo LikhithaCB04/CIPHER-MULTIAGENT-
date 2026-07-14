@@ -6,7 +6,8 @@ import tempfile
 import os
 
 app = FastAPI()
-llm = Ollama(model="mahima-agent")
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+llm = Ollama(model="mahima-agent", base_url=OLLAMA_BASE_URL)
 
 class Task(BaseModel):
     task_id: str

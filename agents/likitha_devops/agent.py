@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List, Optional
@@ -14,7 +15,8 @@ except ImportError:  # pragma: no cover - fallback for environments without the 
             return f"[mock-devops] {self.model} responded to: {prompt[:120]}"
 
 app = FastAPI()
-llm = Ollama(model="phi3", base_url="http://host.docker.internal:11434")
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+llm = Ollama(model="phi3", base_url=OLLAMA_BASE_URL)
 
 
 class TaskInput(BaseModel):

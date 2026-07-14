@@ -8,6 +8,7 @@ import tempfile
 import textwrap
 
 app = FastAPI()
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 
 
 class Task(BaseModel):
