@@ -23,9 +23,7 @@ services:
     depends_on:
       ollama:
         condition: service_healthy
-    volumes:
-      - ./agents/mahima_security/Modelfile:/Modelfile:ro
-    entrypoint: ["/bin/sh", "-c", "ollama pull phi3 && ollama create mahima-agent -f /Modelfile"]
+    entrypoint: ["/bin/sh", "-c", "ollama pull phi3"]
     restart: "no"
 
   orchestrator:
@@ -62,8 +60,6 @@ services:
       context: ./agents/deepthi_data
       dockerfile: Dockerfile
     container_name: deepthi-data-agent
-    ports:
-      - '8001:8001'
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
     depends_on:
@@ -81,8 +77,6 @@ services:
       context: .
       dockerfile: agents/ayeesha_fullstack/Dockerfile
     container_name: ayeesha-fullstack-agent
-    ports:
-      - '8002:8002'
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
     depends_on:
@@ -100,8 +94,6 @@ services:
       context: .
       dockerfile: agents/mahima_security/Dockerfile
     container_name: mahima-security-agent
-    ports:
-      - '8003:8003'
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
     depends_on:
@@ -119,8 +111,6 @@ services:
       context: ./agents/likitha_devops
       dockerfile: Dockerfile
     container_name: likitha-devops-agent
-    ports:
-      - '8004:8004'
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
     depends_on:
@@ -140,8 +130,6 @@ services:
       context: .
       dockerfile: agents/ai_specialist/Dockerfile
     container_name: ai-specialist-agent
-    ports:
-      - '8005:8005'
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
     depends_on:
@@ -155,18 +143,16 @@ services:
       start_period: 20s
 
   frontend:
-    image: node:20-alpine
-    working_dir: /app
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
     ports:
       - '5173:5173'
     depends_on:
       orchestrator:
         condition: service_healthy
-    volumes:
-      - ./frontend:/app
     environment:
-      - CHOKIDAR_USEPOLLING=true
       - VITE_API_URL=http://localhost:8000
 
 volumes:

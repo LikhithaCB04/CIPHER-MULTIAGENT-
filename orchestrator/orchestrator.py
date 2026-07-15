@@ -47,13 +47,13 @@ class Task(BaseModel):
     priority: Optional[str] = "medium"
 
 
-# Map of agents and their ports
-AGENT_PORTS = {
-    "deepthi": "8001",
-    "ayeesha": "8002",
-    "mahima": "8003",
-    "likitha": "8004",
-    "ai_specialist": "8005",
+# Map of agents and their docker-compose service URLs
+AGENT_HOSTS = {
+    "deepthi": "http://deepthi-data-agent:8001",
+    "ayeesha": "http://ayeesha-fullstack-agent:8002",
+    "mahima": "http://mahima-security-agent:8003",
+    "likitha": "http://likitha-devops-agent:8004",
+    "ai_specialist": "http://ai-specialist-agent:8005",
 }
 
 
@@ -160,7 +160,7 @@ async def run_task(task: Task):
     results = []
     for index, agent in enumerate(agents):
         await broadcast({"event": "agent_started", "agent": agent, "task_id": task_id})
-        port = AGENT_PORTS.get(agent, "8005")
+        url = AGENT_HOSTS.get(agent, "http://ai-specialist-agent:8005")
         try:
             payload = {
                 "task_id": task_id,
@@ -171,7 +171,7 @@ async def run_task(task: Task):
             }
             response = await asyncio.to_thread(
                 requests.post,
-                f'http://localhost:{port}/run',
+                f'{url}/run',
                 json=payload,
                 timeout=40,
             )
@@ -187,7 +187,7 @@ async def run_task(task: Task):
                 "next_agent": next_agent,
             })
         except Exception as e:
-            summary = f"Agent {agent} is not running on port {port}. Please start it."
+            summary = f"Agent {agent} is not reachable at {url}. Please start it."
             results.append({"error": summary, "task_id": task_id})
             await broadcast({
                 "event": "agent_finished",

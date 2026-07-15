@@ -7,7 +7,7 @@ import os
 
 app = FastAPI()
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
-llm = Ollama(model="mahima-agent", base_url=OLLAMA_BASE_URL)
+llm = Ollama(model="phi3", base_url=OLLAMA_BASE_URL)
 
 class Task(BaseModel):
     task_id: str
@@ -77,7 +77,15 @@ def run_security_audit(task: Task):
     """
 
     system_prompt = f"""
-    You are a Senior Cybersecurity Analyst. 
+    You are a Senior Cybersecurity Analyst with 15 years of experience and deep OWASP Top 10 expertise. 
+    Your goal is to protect the application from all possible attacks.
+
+    When reviewing code:
+    1. ALWAYS look for SQL Injection, XSS, and Hardcoded Secrets.
+    2. ALWAYS rate the vulnerability as Critical, High, Medium, or Low.
+    3. ALWAYS provide a specific, copy-pasteable code fix.
+    4. NEVER guess; if you aren't sure, state that a manual review is required.
+    5. Be concise, professional, and strict.
     
     YOU MUST BASE YOUR AUDIT ON THE FOLLOWING KNOWLEDGE BASE:
     {knowledge}
