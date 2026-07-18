@@ -11,7 +11,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -56,6 +56,14 @@ AGENT_HOSTS = {
     "ai_specialist": "http://ai-specialist-agent:8005",
 }
 
+# Map of agents and their Docker service hostnames
+AGENT_HOSTS = {
+    "deepthi": "deepthi-data-agent",
+    "ayeesha": "ayeesha-fullstack-agent",
+    "mahima": "mahima-security-agent",
+    "likitha": "likitha-devops-agent",
+    "ai_specialist": "ai-specialist-agent",
+}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -160,7 +168,9 @@ async def run_task(task: Task):
     results = []
     for index, agent in enumerate(agents):
         await broadcast({"event": "agent_started", "agent": agent, "task_id": task_id})
-        url = AGENT_HOSTS.get(agent, "http://ai-specialist-agent:8005")
+        port = AGENT_PORTS.get(agent, "8005")
+        host = AGENT_HOSTS.get(agent, "ai-specialist-agent")
+        url = f"http://{host}:{port}"
         try:
             payload = {
                 "task_id": task_id,
@@ -201,6 +211,3 @@ async def run_task(task: Task):
     return {'task_id': task_id, 'agents_used': agents, 'results': results}
 
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="localhost", port=8000)
