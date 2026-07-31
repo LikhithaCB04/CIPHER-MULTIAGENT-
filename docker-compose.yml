@@ -28,11 +28,6 @@ services:
     command:
       - |
         ollama pull phi3:mini
-        ollama pull llama3.2:latest
-        ollama pull nomic-embed-text
-        ollama pull qwen2.5:3b
-        ollama pull gemma2:2b
-        ollama pull deepseek-r1:8b
     restart: "no"
 
   master-orchestrator:
