@@ -1,5 +1,9 @@
+import os
+
 import streamlit as st
 import requests
+
+ORCHESTRATOR_URL = os.environ.get("ORCHESTRATOR_URL", "http://localhost:8000")
 
 st.set_page_config(
     page_title="CIPHER Multi-Agent Platform",
@@ -155,7 +159,7 @@ if run_btn:
     else:
         with st.spinner("🤖 Agents are working... this may take 1-3 minutes"):
             try:
-                r = requests.post('http://localhost:8000/run',
+                r = requests.post(f'{ORCHESTRATOR_URL}/run',
                                   json={'description': task, 'context': ''})
                 data = r.json()
 

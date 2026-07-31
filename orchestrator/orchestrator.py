@@ -47,22 +47,15 @@ class Task(BaseModel):
     priority: Optional[str] = "medium"
 
 
-# Map of agents and their docker-compose service URLs
-AGENT_HOSTS = {
-    "deepthi": "http://deepthi-data-agent:8001",
-    "ayeesha": "http://ayeesha-fullstack-agent:8002",
-    "mahima": "http://mahima-security-agent:8003",
-    "likitha": "http://likitha-devops-agent:8004",
-    "ai_specialist": "http://ai-specialist-agent:8005",
-}
-
-# Map of agents and their Docker service hostnames
-AGENT_HOSTS = {
-    "deepthi": "deepthi-data-agent",
-    "ayeesha": "ayeesha-fullstack-agent",
-    "mahima": "mahima-security-agent",
-    "likitha": "likitha-devops-agent",
-    "ai_specialist": "ai-specialist-agent",
+# Map of agents to their docker-compose service name + the port each
+# agent's own Dockerfile actually binds uvicorn to. Keep this in sync with
+# docker-compose.yml (service name) and agents/<name>/Dockerfile (port).
+AGENT_SERVICES = {
+    "deepthi": {"host": "deepthi-agent", "port": 8001},
+    "ayeesha": {"host": "ayesha-agent", "port": 8002},
+    "mahima": {"host": "mahima-agent", "port": 8003},
+    "likitha": {"host": "likitha-agent", "port": 8004},
+    "ai_specialist": {"host": "ai-specialist-agent", "port": 8005},
 }
 
 @app.websocket("/ws")
@@ -168,9 +161,8 @@ async def run_task(task: Task):
     results = []
     for index, agent in enumerate(agents):
         await broadcast({"event": "agent_started", "agent": agent, "task_id": task_id})
-        port = AGENT_PORTS.get(agent, "8005")
-        host = AGENT_HOSTS.get(agent, "ai-specialist-agent")
-        url = f"http://{host}:{port}"
+        service = AGENT_SERVICES.get(agent, AGENT_SERVICES["ai_specialist"])
+        url = f"http://{service['host']}:{service['port']}"
         try:
             payload = {
                 "task_id": task_id,

@@ -20,6 +20,8 @@ services:
     depends_on:
       ollama:
         condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
     volumes:
       - ollama_models:/root/.ollama
     entrypoint: ["/bin/sh", "-c"]
@@ -82,11 +84,11 @@ services:
       dockerfile: Dockerfile
     container_name: deepthi-agent
     ports:
-      - "8006:8006"
+      - "8001:8001"
     environment:
       - OLLAMA_HOST=http://ollama:11434
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8006/health', timeout=5).read()"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=5).read()"]
       interval: 10s
       timeout: 10s
       retries: 15
@@ -98,11 +100,11 @@ services:
       dockerfile: Dockerfile
     container_name: likitha-agent
     ports:
-      - "8007:8007"
+      - "8004:8004"
     environment:
       - OLLAMA_HOST=http://ollama:11434
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8007/health', timeout=5).read()"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8004/health', timeout=5).read()"]
       interval: 10s
       timeout: 10s
       retries: 15
@@ -114,11 +116,11 @@ services:
       dockerfile: Dockerfile
     container_name: mahima-agent
     ports:
-      - "8008:8008"
+      - "8003:8003"
     environment:
       - OLLAMA_HOST=http://ollama:11434
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8008/health', timeout=5).read()"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8003/health', timeout=5).read()"]
       interval: 10s
       timeout: 10s
       retries: 15
@@ -130,15 +132,41 @@ services:
       dockerfile: Dockerfile
     container_name: ayesha-agent
     ports:
-      - "8009:8009"
+      - "8002:8002"
     environment:
       - OLLAMA_HOST=http://ollama:11434
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8009/health', timeout=5).read()"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/health', timeout=5).read()"]
       interval: 10s
       timeout: 10s
       retries: 15
     restart: unless-stopped
 
+  frontend:
+      build:
+        context: ./frontend
+        dockerfile: Dockerfile
+      container_name: cipher-frontend
+      ports:
+        - "5173:5173"
+      environment:
+        - VITE_API_URL=http://localhost:8000
+      depends_on:
+        - master-orchestrator
+      restart: unless-stopped
+  
+  dashboard:
+      build:
+        context: .
+        dockerfile: dashboard/Dockerfile
+      container_name: cipher-dashboard
+      ports:
+        - "8501:8501"
+      environment:
+        - ORCHESTRATOR_URL=http://master-orchestrator:8000
+      depends_on:
+        - master-orchestrator
+      restart: unless-stopped
+  
 volumes:
   ollama_models:
