@@ -202,4 +202,6 @@ async def run_task(task: Task):
     await broadcast({"event": "pipeline_complete", "task_id": task_id})
     return {'task_id': task_id, 'agents_used': agents, 'results': results}
 
-
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
