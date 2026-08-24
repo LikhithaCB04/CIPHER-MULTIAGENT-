@@ -53,7 +53,8 @@ app.add_middleware(
  
 # --- LLM Setup ---
 # Uses mistral via Ollama. Change model="tinyllama" here if RAM is tight.
-llm = Ollama(model="mistral")
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+llm = Ollama(model="phi3", base_url=OLLAMA_BASE_URL)
  
 # =============================================================================
 # SHARED API CONTRACT — matches shared/api_contracts/contract.json exactly
@@ -751,6 +752,11 @@ NOTE: In standalone mode charts are saved to /tmp/agent_charts/.
 When integrated with the platform dashboard, Ayeesha's agent will render them.
 """
  
+@app.get('/health')
+def health_check():
+    return {"status": "ok"}
+
+
 # =============================================================================
 # MAIN ROUTE — matches API contract exactly
 # =============================================================================
@@ -773,6 +779,16 @@ def run_task(task: TaskInput):
                 logs.append(f"Loaded user CSV: {df.shape}")
             except Exception:
                 pass
+
+            # Try Excel workbook content if the context looks like an uploaded spreadsheet path.
+            if df is None:
+                try:
+                    if os.path.exists(task.context):
+                        df = pd.read_excel(task.context, engine="openpyxl")
+                        data_source = "user_provided_excel"
+                        logs.append(f"Loaded user Excel: {df.shape}")
+                except Exception:
+                    pass
  
             # Try JSON
             if df is None:
