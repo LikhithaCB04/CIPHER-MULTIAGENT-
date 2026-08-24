@@ -51,10 +51,10 @@ class Task(BaseModel):
 # agent's own Dockerfile actually binds uvicorn to. Keep this in sync with
 # docker-compose.yml (service name) and agents/<name>/Dockerfile (port).
 AGENT_SERVICES = {
-    "deepthi": {"host": "deepthi-agent", "port": 8001},
-    "ayeesha": {"host": "ayesha-agent", "port": 8002},
-    "mahima": {"host": "mahima-agent", "port": 8003},
-    "likitha": {"host": "likitha-agent", "port": 8004},
+    "data_science": {"host": "data-science-agent", "port": 8001},
+    "fullstack": {"host": "fullstack-agent", "port": 8002},
+    "security": {"host": "security-agent", "port": 8003},
+    "devops": {"host": "devops-agent", "port": 8004},
     "ai_specialist": {"host": "ai-specialist-agent", "port": 8005},
 }
 
@@ -124,13 +124,13 @@ def choose_agents(description: str):
     if any(keyword in lowered for keyword in ["clone", "repo", "repository", "git", "fix bug", "run tests", "test suite", "pytest", "npm test"]):
         return ["ai_specialist"]
     if any(keyword in lowered for keyword in ["deploy", "docker", "kubernetes", "infra", "server", "ci/cd"]):
-        return ["likitha"]
+        return ["devops"]
     if any(keyword in lowered for keyword in ["security", "audit", "vulnerability", "threat", "auth", "malware"]):
-        return ["mahima", "likitha"]
+        return ["security", "devops"]
     if any(keyword in lowered for keyword in ["react", "frontend", "ui", "typescript", "vite", "api", "component"]):
-        return ["ayeesha", "ai_specialist"]
+        return ["fullstack", "ai_specialist"]
     if any(keyword in lowered for keyword in ["data", "analysis", "pandas", "ml", "model", "chart", "numpy"]):
-        return ["deepthi", "ai_specialist"]
+        return ["data_science", "ai_specialist"]
     return ["ai_specialist"]
 
 
@@ -144,8 +144,8 @@ async def run_task(task: Task):
     Given this task: {task.description}
     If the task mentions cloning a repo, a git URL, fixing a bug, or running tests,
     route it to ai_specialist. Otherwise choose one or more agents from:
-    deepthi, ayeesha, mahima, likitha, ai_specialist.
-    Return ONLY a JSON list like: ["ai_specialist"] or ["ayeesha", "ai_specialist"]
+    data_science, fullstack, security, devops, ai_specialist.
+    Return ONLY a JSON list like: ["ai_specialist"] or ["fullstack", "ai_specialist"]
     '''
 
     try:

@@ -56,10 +56,10 @@ const useCanvasStore = create<NodeState>((set, get) => ({
 }));
 
 const agentMeta = {
-  deepthi: { label: 'Deepthi', role: 'Data', color: '#60a5fa', accent: 'from-blue-500/30 to-sky-400/10' },
-  ayeesha: { label: 'Ayeesha', role: 'Fullstack', color: '#a78bfa', accent: 'from-violet-500/30 to-fuchsia-400/10' },
-  mahima: { label: 'Mahima', role: 'Security', color: '#f87171', accent: 'from-rose-500/30 to-orange-400/10' },
-  likitha: { label: 'Likitha', role: 'DevOps', color: '#4ade80', accent: 'from-emerald-500/30 to-lime-400/10' },
+  data_science: { label: 'Data Science', role: 'Data', color: '#60a5fa', accent: 'from-blue-500/30 to-sky-400/10' },
+  fullstack: { label: 'Fullstack', role: 'Web Dev', color: '#a78bfa', accent: 'from-violet-500/30 to-fuchsia-400/10' },
+  security: { label: 'Security', role: 'Cybersec', color: '#f87171', accent: 'from-rose-500/30 to-orange-400/10' },
+  devops: { label: 'DevOps', role: 'Infrastructure', color: '#4ade80', accent: 'from-emerald-500/30 to-lime-400/10' },
   ai_specialist: { label: 'AI Specialist', role: 'Specialist', color: '#fb923c', accent: 'from-amber-500/30 to-orange-400/10' },
 };
 
@@ -97,7 +97,7 @@ const AgentNode = ({ data }: { data: any }) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className={`rounded-full bg-gradient-to-br ${meta.accent} p-2`}>
-            {data.agent === 'deepthi' ? <Cpu size={14} /> : data.agent === 'ayeesha' ? <Bot size={14} /> : data.agent === 'mahima' ? <Sparkles size={14} /> : data.agent === 'likitha' ? <Workflow size={14} /> : <Activity size={14} />}
+            {data.agent === 'data_science' ? <Cpu size={14} /> : data.agent === 'fullstack' ? <Bot size={14} /> : data.agent === 'security' ? <Sparkles size={14} /> : data.agent === 'devops' ? <Workflow size={14} /> : <Activity size={14} />}
           </div>
           <div>
             <div className="text-sm font-semibold text-white">{meta.label}</div>
