@@ -117,3 +117,6 @@ def run_security_audit(task: Task):
         'next_agent': 'devops',
         'logs': logs
     }
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run(app, host='localhost', port=8003)

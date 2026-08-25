@@ -49,13 +49,12 @@ class Task(BaseModel):
 
 # Map of agents to their docker-compose service name + the port each
 # agent's own Dockerfile actually binds uvicorn to. Keep this in sync with
-# docker-compose.yml (service name) and agents/<name>/Dockerfile (port).
 AGENT_SERVICES = {
-    "data_science": {"host": "data-science-agent", "port": 8001},
-    "fullstack": {"host": "fullstack-agent", "port": 8002},
-    "security": {"host": "security-agent", "port": 8003},
-    "devops": {"host": "devops-agent", "port": 8004},
-    "ai_specialist": {"host": "ai-specialist-agent", "port": 8005},
+    "data_science": {"host": "127.0.0.1", "port": 8001},
+    "fullstack": {"host": "127.0.0.1", "port": 8002},
+    "security": {"host": "127.0.0.1", "port": 8003},
+    "devops": {"host": "127.0.0.1", "port": 8004},
+    "ai_specialist": {"host": "127.0.0.1", "port": 8005},
 }
 
 @app.websocket("/ws")
@@ -149,7 +148,7 @@ async def run_task(task: Task):
     '''
 
     try:
-        agents_raw = llm.invoke(prompt)
+        agents_raw = await asyncio.to_thread(llm.invoke, prompt)
         if "[" in agents_raw and "]" in agents_raw:
             json_str = agents_raw[agents_raw.find("["):agents_raw.rfind("]") + 1]
             agents = json.loads(json_str)
@@ -175,7 +174,7 @@ async def run_task(task: Task):
                 requests.post,
                 f'{url}/run',
                 json=payload,
-                timeout=40,
+                timeout=8,
             )
             response_data = await asyncio.to_thread(response.json)
             next_agent = response_data.get("next_agent") or (agents[index + 1] if index + 1 < len(agents) else None)

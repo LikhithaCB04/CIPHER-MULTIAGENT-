@@ -937,3 +937,6 @@ def root():
         "api_contract": "compatible with shared/api_contracts/contract.json",
         "docs": "/docs"
     }
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run(app, host='localhost', port=8001)
