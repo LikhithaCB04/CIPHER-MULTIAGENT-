@@ -127,10 +127,10 @@ def choose_agents(description: str):
     if any(keyword in lowered for keyword in ["security", "audit", "vulnerability", "threat", "auth", "malware"]):
         return ["security", "devops"]
     if any(keyword in lowered for keyword in ["react", "frontend", "ui", "typescript", "vite", "api", "component"]):
-        return ["fullstack", "ai_specialist"]
+        return ["fullstack"]
     if any(keyword in lowered for keyword in ["data", "analysis", "pandas", "ml", "model", "chart", "numpy"]):
-        return ["data_science", "ai_specialist"]
-    return ["ai_specialist"]
+        return ["data_science"]
+    return ["fullstack"]
 
 
 @app.post('/run')
@@ -141,10 +141,10 @@ async def run_task(task: Task):
     prompt = f'''
     You are a task router for a multi-agent AI system.
     Given this task: {task.description}
-    If the task mentions cloning a repo, a git URL, fixing a bug, or running tests,
-    route it to ai_specialist. Otherwise choose one or more agents from:
-    data_science, fullstack, security, devops, ai_specialist.
-    Return ONLY a JSON list like: ["ai_specialist"] or ["fullstack", "ai_specialist"]
+    If the task mentions a git URL, github, or repository, route it to ai_specialist.
+    Otherwise choose one or more agents from: data_science, fullstack, security, devops.
+    Do NOT route to ai_specialist unless a repository is explicitly mentioned.
+    Return ONLY a JSON list like: ["fullstack"] or ["data_science", "devops"]
     '''
 
     try:
@@ -174,7 +174,7 @@ async def run_task(task: Task):
                 requests.post,
                 f'{url}/run',
                 json=payload,
-                timeout=8,
+                timeout=120,
             )
             response_data = await asyncio.to_thread(response.json)
             next_agent = response_data.get("next_agent") or (agents[index + 1] if index + 1 < len(agents) else None)
