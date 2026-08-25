@@ -266,7 +266,7 @@ Raw stats:
  
 Write exactly 3 insights in plain English, numbered 1, 2, 3. Keep each insight to 2-3 sentences.
 """
-    insights = llm(insight_prompt)
+    insights = llm.invoke(insight_prompt)
     return raw_report + f"\n\n{'='*40}\nAI-GENERATED INSIGHTS\n{'='*40}\n{insights}"
  
  
@@ -349,7 +349,7 @@ def run_cleaning(df: pd.DataFrame, config: CleaningConfig, logs: list) -> tuple:
     cleaning_report = "\n".join(report)
  
     # LLM summary
-    llm_summary = llm(f"""
+    llm_summary = llm.invoke(f"""
 You are a data engineer. Summarize these data cleaning steps in 2 sentences for a business audience.
 Don't use technical jargon. Steps: {cleaning_report}
 """)
@@ -463,7 +463,7 @@ BEST MODEL: {best_name} (R²: {best_r2:.4f})
 """
  
     # LLM interpretation
-    interpretation = llm(f"""
+    interpretation = llm.invoke(f"""
 You are a data science expert. Interpret these ML results for a business team in 3 sentences.
 Explain what the accuracy/R² means in plain English and what the team should do next.
 Results: {report[:1500]}
@@ -520,7 +520,7 @@ You are a business analyst. Given these cluster profiles from a dataset, give ea
 Profiles: {cluster_profiles.to_string()}
 Format: Cluster 0: [name], Cluster 1: [name], etc.
 """
-    cluster_names = llm(naming_prompt)
+    cluster_names = llm.invoke(naming_prompt)
     return report + f"\nCLUSTER LABELS (AI-named):\n{cluster_names}"
  
  
@@ -562,7 +562,7 @@ STRONG CORRELATIONS (|r| > 0.5):
 {corr_summary}
 """
  
-    interpretation = llm(f"""
+    interpretation = llm.invoke(f"""
 You are a statistician. Explain these results to a non-technical business audience in 3 sentences.
 Focus on what the distributions and correlations mean for decision-making.
 Results: {report[:2000]}
@@ -600,7 +600,7 @@ FEATURE VARIANCE (higher = more informative):
 {variance_info.head(10).to_string()}
 """
  
-    guidance = llm(f"""
+    guidance = llm.invoke(f"""
 You are a senior ML engineer. Based on this feature analysis, give 3 concrete recommendations.
 Which features to keep, drop, or engineer? Be specific.
 Analysis: {report[:2000]}
@@ -653,7 +653,7 @@ FINAL DATASET:
   Ready for ML: Yes ✓
 """
  
-    pipeline_code = llm(f"""
+    pipeline_code = llm.invoke(f"""
 Write a short Python code snippet (15 lines max) that implements this pipeline as a reusable function.
 Use sklearn Pipeline. Pipeline steps: {[k for k in encoders.items()]}
 Make it clean and production-ready.
@@ -731,7 +731,7 @@ def run_visualization(df: pd.DataFrame, description: str, logs: list) -> str:
         plt.close()
         charts_created.append(path)
  
-    chart_desc = llm(f"""
+    chart_desc = llm.invoke(f"""
 You are a data visualization expert. Describe what each of these {len(charts_created)} charts shows.
 Charts generated: {[os.path.basename(p) for p in charts_created]}
 Dataset columns: {df.columns.tolist()}
@@ -879,7 +879,7 @@ SAMPLE DATA (first 5 rows):
         # -----------------------------------------------
         # 4. FINAL SUMMARY VIA LLM
         # -----------------------------------------------
-        summary = llm(f"""
+        summary = llm.invoke(f"""
 In 2 sentences, summarize what was accomplished in this data task.
 Task: {task.description}
 Intent detected: {intent}
