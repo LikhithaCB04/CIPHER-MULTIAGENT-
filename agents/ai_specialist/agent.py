@@ -57,11 +57,11 @@ async def process_task(data: Task):
         if not repo_url:
             return TaskOutput(
                 task_id=data.task_id,
-                status="error",
-                result="No repository URL was supplied in the context.",
-                summary="Repo operator requires a git URL in the request context.",
+                status="success",
+                result="No repository URL was supplied. If you want me to edit an existing codebase, please provide a git clone URL in your prompt (e.g. https://github.com/...).",
+                summary="No repository provided. Skipping codebase modifications.",
                 next_agent=None,
-                logs=logs + ["Missing repo URL"],
+                logs=logs + ["Missing repo URL, skipping operations"],
             )
 
         with tempfile.TemporaryDirectory(prefix="repo-operator-", dir="/tmp") as temp_dir:
