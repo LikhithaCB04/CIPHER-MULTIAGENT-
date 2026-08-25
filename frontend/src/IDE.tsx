@@ -103,14 +103,14 @@ export default function IDE() {
   useEffect(() => {
     const check = async () => {
       try {
-        const r = await fetch(`${API}/health`, { signal: AbortSignal.timeout(3000) });
+        const r = await fetch(`${API}/health`, { signal: AbortSignal.timeout(8000) });
         setBackendOnline(r.ok);
       } catch {
         setBackendOnline(false);
       }
     };
     check();
-    const interval = setInterval(check, 10000);
+    const interval = setInterval(check, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -272,74 +272,8 @@ export default function IDE() {
         </div>
       </div>
 
-      {/* ── Agent Status Panel (replaces useless code editor) ─────── */}
-      <div className="flex-1 flex flex-col border-r border-[#1a1a1a] bg-[#050505]">
-        {/* Header */}
-        <div className="h-12 border-b border-[#1a1a1a] flex items-center justify-between px-5 bg-[#080808]">
-          <span className="text-[10px] font-bold tracking-[0.25em] text-[#555] uppercase">Live Agent Monitor</span>
-          {/* Backend status indicator */}
-          <div className={`flex items-center gap-2 text-[10px] font-mono px-3 py-1 rounded-full border ${
-            backendOnline === null ? 'border-[#333] text-[#555]' :
-            backendOnline ? 'border-emerald-500/30 text-emerald-400 bg-emerald-400/5' : 'border-rose-500/30 text-rose-400 bg-rose-400/5'
-          }`}>
-            {backendOnline === null ? <Loader2 className="w-3 h-3 animate-spin" /> :
-             backendOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-            {backendOnline === null ? 'Checking…' : backendOnline ? 'Backend online' : 'Backend offline'}
-          </div>
-        </div>
-
-        {/* Agent cards grid */}
-        <div className="flex-1 p-5 overflow-auto">
-          <div className="grid grid-cols-1 gap-3">
-            {AGENTS.map(agent => {
-              const state = agentStates.find(s => s.id === agent.id)!;
-              const Icon = agent.icon;
-              return (
-                <motion.div
-                  key={agent.id}
-                  animate={{ boxShadow: state.status === 'running' ? `0 0 20px ${agent.glow}` : '0 0 0 transparent' }}
-                  transition={{ duration: 0.5 }}
-                  className="p-4 rounded-xl border border-[#1a1a1a] bg-[#090909] flex items-center gap-4"
-                >
-                  {/* Icon */}
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: agent.glow, border: `1px solid ${agent.color}30` }}>
-                    <Icon className="w-4 h-4" style={{ color: agent.color }} />
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-sm font-semibold text-white">{agent.name}</span>
-                      <span className="text-[10px] text-[#444] font-mono">{agent.desc}</span>
-                    </div>
-                    <div className="text-[11px] text-[#555] font-mono truncate">
-                      {state.log || (state.status === 'idle' ? 'Waiting for task…' : '')}
-                    </div>
-                  </div>
-
-                  {/* Status badge */}
-                  <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full flex-shrink-0 ${
-                    state.status === 'running' ? 'bg-yellow-400/10 text-yellow-400' :
-                    state.status === 'done'    ? 'bg-emerald-400/10 text-emerald-400' :
-                    state.status === 'error'   ? 'bg-rose-400/10 text-rose-400' :
-                                                  'bg-[#111] text-[#444]'
-                  }`}>
-                    {state.status === 'running' && <Loader2 className="w-3 h-3 animate-spin" />}
-                    {state.status === 'done'    && <CheckCircle2 className="w-3 h-3" />}
-                    {state.status === 'error'   && <XCircle className="w-3 h-3" />}
-                    {state.status === 'idle'    && <span className="w-1.5 h-1.5 rounded-full bg-[#333]" />}
-                    {state.status}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Chat panel ───────────────────────────────────────────────── */}
-      <div className="w-[460px] flex flex-col bg-[#070707]">
+      {/* ── Chat panel (now in middle) ───────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col bg-[#070707] border-r border-[#1a1a1a]">
 
         {/* Chat header + model selector */}
         <div className="h-12 border-b border-[#1a1a1a] flex items-center justify-between px-4">
@@ -409,8 +343,13 @@ export default function IDE() {
                           </div>
                           {res.error
                             ? <div className="text-rose-400 break-words">{res.error}</div>
-                            : <div className="text-[#999] space-y-1">
-                                <div>{res.summary || res.result || 'Agent completed successfully.'}</div>
+                            : <div className="text-[#999] space-y-3">
+                                <div>{res.summary || 'Agent completed successfully.'}</div>
+                                {res.result && (
+                                  <pre className="bg-[#000] p-3 rounded-lg overflow-x-auto text-[10px] text-emerald-400 border border-[#1a1a1a] whitespace-pre-wrap break-words">
+                                    <code>{res.result}</code>
+                                  </pre>
+                                )}
                               </div>
                           }
                         </motion.div>
@@ -469,6 +408,72 @@ export default function IDE() {
               Backend offline — start the orchestrator: <code>uvicorn orchestrator:app --port 8000</code>
             </p>
           )}
+        </div>
+      </div>
+
+      {/* ── Agent Status Panel (now on the right) ─────── */}
+      <div className="w-[420px] flex flex-col bg-[#050505]">
+        {/* Header */}
+        <div className="h-12 border-b border-[#1a1a1a] flex items-center justify-between px-5 bg-[#080808]">
+          <span className="text-[10px] font-bold tracking-[0.25em] text-[#555] uppercase">Live Agent Monitor</span>
+          {/* Backend status indicator */}
+          <div className={`flex items-center gap-2 text-[10px] font-mono px-3 py-1 rounded-full border ${
+            backendOnline === null ? 'border-[#333] text-[#555]' :
+            backendOnline ? 'border-emerald-500/30 text-emerald-400 bg-emerald-400/5' : 'border-rose-500/30 text-rose-400 bg-rose-400/5'
+          }`}>
+            {backendOnline === null ? <Loader2 className="w-3 h-3 animate-spin" /> :
+             backendOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+            {backendOnline === null ? 'Checking…' : backendOnline ? 'Backend online' : 'Backend offline'}
+          </div>
+        </div>
+
+        {/* Agent cards grid */}
+        <div className="flex-1 p-5 overflow-auto">
+          <div className="grid grid-cols-1 gap-3">
+            {AGENTS.map(agent => {
+              const state = agentStates.find(s => s.id === agent.id)!;
+              const Icon = agent.icon;
+              return (
+                <motion.div
+                  key={agent.id}
+                  animate={{ boxShadow: state.status === 'running' ? `0 0 20px ${agent.glow}` : '0 0 0 transparent' }}
+                  transition={{ duration: 0.5 }}
+                  className="p-4 rounded-xl border border-[#1a1a1a] bg-[#090909] flex items-center gap-4"
+                >
+                  {/* Icon */}
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: agent.glow, border: `1px solid ${agent.color}30` }}>
+                    <Icon className="w-4 h-4" style={{ color: agent.color }} />
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-sm font-semibold text-white">{agent.name}</span>
+                      <span className="text-[10px] text-[#444] font-mono">{agent.desc}</span>
+                    </div>
+                    <div className="text-[11px] text-[#555] font-mono truncate">
+                      {state.log || (state.status === 'idle' ? 'Waiting for task…' : '')}
+                    </div>
+                  </div>
+
+                  {/* Status badge */}
+                  <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full flex-shrink-0 ${
+                    state.status === 'running' ? 'bg-yellow-400/10 text-yellow-400' :
+                    state.status === 'done'    ? 'bg-emerald-400/10 text-emerald-400' :
+                    state.status === 'error'   ? 'bg-rose-400/10 text-rose-400' :
+                                                  'bg-[#111] text-[#444]'
+                  }`}>
+                    {state.status === 'running' && <Loader2 className="w-3 h-3 animate-spin" />}
+                    {state.status === 'done'    && <CheckCircle2 className="w-3 h-3" />}
+                    {state.status === 'error'   && <XCircle className="w-3 h-3" />}
+                    {state.status === 'idle'    && <span className="w-1.5 h-1.5 rounded-full bg-[#333]" />}
+                    {state.status}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
