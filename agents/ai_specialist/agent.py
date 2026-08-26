@@ -55,7 +55,7 @@ class SimpleTextParser(HTMLParser):
 async def health_check(): return {"status": "ok"}
 
 @app.post("/run", response_model=TaskOutput)
-async def process_task(data: Task):
+def process_task(data: Task):
     logs = [f"AI Specialist received task {data.task_id}"]
     
     # Extract URLs from context or description
@@ -66,6 +66,8 @@ async def process_task(data: Task):
     for token in text_to_search.split():
         if "github.com" in token or token.endswith(".git"):
             repo_url = token
+            # Fix typos like ttps
+            if repo_url.startswith("ttps"): repo_url = "h" + repo_url
         elif token.startswith("http"):
             if not repo_url: browser_url = token
 
@@ -85,7 +87,8 @@ async def process_task(data: Task):
             repo_context = ""
             for file_path in files_list.split('\n'):
                 file_path = file_path.strip()
-                if not file_path: continue
+                if not file_path or "node_modules" in file_path or "package-lock" in file_path or file_path.endswith((".png", ".jpg", ".ico")): 
+                    continue
                 full_path = os.path.join(clone_target, file_path)
                 try:
                     with open(full_path, "r", encoding="utf-8") as f:
@@ -94,6 +97,9 @@ async def process_task(data: Task):
                             repo_context += f"--- {file_path} ---\n{content}\n\n"
                 except Exception:
                     pass
+                if len(repo_context) > 40000: # Truncate massive repositories
+                    repo_context += "\n[... truncated for context window limit ...]"
+                    break
             
             prompt = f"Task: {data.description}\n\nRepository Contents:\n{repo_context}\n\nIf the user is asking a question about the repository, answer it directly and comprehensively based on the file contents. If the user explicitly asks to modify or write code to a specific file, return ONLY the exact filepath to modify (e.g. 'index.html') and absolutely nothing else."
             response_text = llm.invoke(prompt).strip()
