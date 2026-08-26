@@ -148,12 +148,20 @@ async def run_task(task: Task):
     '''
 
     try:
-        agents_raw = await asyncio.to_thread(llm.invoke, prompt)
-        if "[" in agents_raw and "]" in agents_raw:
-            json_str = agents_raw[agents_raw.find("["):agents_raw.rfind("]") + 1]
-            agents = json.loads(json_str)
+        if "github.com" in task.description.lower() or "http://" in task.description.lower() or "https://" in task.description.lower():
+            agents = ["ai_specialist"]
         else:
-            agents = choose_agents(task.description)
+            agents_raw = await asyncio.to_thread(llm.invoke, prompt)
+            if "[" in agents_raw and "]" in agents_raw:
+                json_str = agents_raw[agents_raw.find("["):agents_raw.rfind("]") + 1]
+                agents = json.loads(json_str)
+                if not isinstance(agents, list):
+                    agents = []
+            else:
+                agents = choose_agents(task.description)
+                
+            if not agents:
+                agents = choose_agents(task.description)
     except Exception:
         agents = choose_agents(task.description)
 

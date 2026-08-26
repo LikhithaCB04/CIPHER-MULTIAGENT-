@@ -1,15 +1,23 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import List, Optional
 import os
-import shutil
 import subprocess
 import tempfile
 import textwrap
+import urllib.request
+from html.parser import HTMLParser
+from typing import List, Optional
+from fastapi import FastAPI
+from pydantic import BaseModel
 
 app = FastAPI()
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 
+try:
+    from langchain_community.llms import Ollama
+    llm = Ollama(model="phi3", base_url=OLLAMA_BASE_URL)
+except ImportError:
+    class MockLLM:
+        def invoke(self, prompt): return f"LLM is missing, could not process: {prompt[:50]}"
+    llm = MockLLM()
 
 class Task(BaseModel):
     task_id: str
@@ -17,7 +25,6 @@ class Task(BaseModel):
     description: str
     context: str = ""
     priority: Optional[str] = "medium"
-
 
 class TaskOutput(BaseModel):
     task_id: str
@@ -27,113 +34,134 @@ class TaskOutput(BaseModel):
     next_agent: Optional[str] = None
     logs: List[str]
 
-
 def run_command(cmd: List[str], cwd: str) -> str:
-    completed = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=180)
-    stdout = completed.stdout.strip()
-    stderr = completed.stderr.strip()
-    if completed.returncode != 0:
-        return f"exit={completed.returncode}\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}"
-    return stdout or "OK"
+    try:
+        completed = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=180)
+        return completed.stdout.strip() if completed.returncode == 0 else f"exit={completed.returncode}\n{completed.stderr.strip()}"
+    except Exception as e:
+        return f"Execution failed: {str(e)}"
 
+class SimpleTextParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.text_content = []
+    def handle_data(self, data):
+        if data.strip():
+            self.text_content.append(data.strip())
+    def get_text(self):
+        return " ".join(self.text_content)
 
 @app.get('/health')
-async def health_check():
-    return {"status": "ok"}
-
+async def health_check(): return {"status": "ok"}
 
 @app.post("/run", response_model=TaskOutput)
 async def process_task(data: Task):
-    logs = [f"Repo operator received task {data.task_id}"]
-    try:
-        repo_url = None
-        for token in ["https://", "http://", "git@", "github.com"]:
-            if token in data.context:
-                repo_url = token
-                break
-        if repo_url is None and data.context:
-            repo_url = data.context.strip()
+    logs = [f"AI Specialist received task {data.task_id}"]
+    
+    # Extract URLs from context or description
+    text_to_search = f"{data.context} {data.description}"
+    repo_url = None
+    browser_url = None
+    
+    for token in text_to_search.split():
+        if "github.com" in token or token.endswith(".git"):
+            repo_url = token
+        elif token.startswith("http"):
+            if not repo_url: browser_url = token
 
-        if not repo_url:
-            return TaskOutput(
-                task_id=data.task_id,
-                status="success",
-                result="No repository URL was supplied. If you want me to edit an existing codebase, please provide a git clone URL in your prompt (e.g. https://github.com/...).",
-                summary="No repository provided. Skipping codebase modifications.",
-                next_agent=None,
-                logs=logs + ["Missing repo URL, skipping operations"],
-            )
-
-        with tempfile.TemporaryDirectory(prefix="repo-operator-", dir="/tmp") as temp_dir:
+    if repo_url:
+        logs.append(f"Detected Git repository: {repo_url}")
+        with tempfile.TemporaryDirectory(prefix="repo-operator-") as temp_dir:
             clone_target = os.path.join(temp_dir, "repo")
             clone_result = run_command(["git", "clone", repo_url, clone_target], cwd=temp_dir)
-            logs.append(f"Clone result: {clone_result[:250]}")
+            logs.append(f"Clone result: {clone_result[:100]}")
+            
             if clone_result.startswith("exit="):
+                return TaskOutput(task_id=data.task_id, status="error", result=clone_result, summary="Failed to clone repository.", logs=logs)
+
+            # Load contents of all files to give context to the LLM
+            files_list = run_command(["git", "ls-tree", "-r", "HEAD", "--name-only"], cwd=clone_target)
+            
+            repo_context = ""
+            for file_path in files_list.split('\n'):
+                file_path = file_path.strip()
+                if not file_path: continue
+                full_path = os.path.join(clone_target, file_path)
+                try:
+                    with open(full_path, "r", encoding="utf-8") as f:
+                        content = f.read()
+                        if len(content) < 20000: # skip huge files
+                            repo_context += f"--- {file_path} ---\n{content}\n\n"
+                except Exception:
+                    pass
+            
+            prompt = f"Task: {data.description}\n\nRepository Contents:\n{repo_context}\n\nIf the user is asking a question about the repository, answer it directly and comprehensively based on the file contents. If the user explicitly asks to modify or write code to a specific file, return ONLY the exact filepath to modify (e.g. 'index.html') and absolutely nothing else."
+            response_text = llm.invoke(prompt).strip()
+            
+            target_file = None
+            for line in files_list.split("\n"):
+                clean_line = line.strip()
+                if clean_line and (clean_line == response_text or clean_line == response_text.strip("`'\"")):
+                    target_file = clean_line
+                    break
+                    
+            if not target_file:
+                # It's an answer to a question (or it didn't return a valid file)
                 return TaskOutput(
-                    task_id=data.task_id,
-                    status="error",
-                    result=f"Clone failed: {clone_result}",
-                    summary="Repository could not be cloned.",
-                    next_agent=None,
-                    logs=logs,
+                    task_id=data.task_id, status="success",
+                    result=response_text,
+                    summary=f"Analyzed repository {repo_url}.",
+                    logs=logs
                 )
-
-            changed_files = []
-            edit_hint = data.description.lower()
-            for root, _, files in os.walk(clone_target):
-                for filename in files:
-                    if filename.endswith((".md", ".txt", ".py", ".js", ".ts", ".tsx", ".json", ".yml", ".yaml")):
-                        path = os.path.join(root, filename)
-                        try:
-                            with open(path, "r", encoding="utf-8") as handle:
-                                content = handle.read()
-                        except Exception:
-                            continue
-                        if "TODO" in content or "FIXME" in content or edit_hint in content.lower():
-                            if filename.endswith((".md", ".txt")):
-                                updated = content.replace("TODO", f"TODO ({data.description})")
-                            else:
-                                updated = content.replace("placeholder", f"{data.description}")
-                            with open(path, "w", encoding="utf-8") as handle:
-                                handle.write(updated)
-                            changed_files.append(path.replace(clone_target + os.sep, ""))
-                            break
-
-            if not changed_files:
-                changed_files = ["README.md"]
-                with open(os.path.join(clone_target, "README.md"), "a", encoding="utf-8") as handle:
-                    handle.write(f"\n\nRepo operator note: {data.description}\n")
-
-            test_result = run_command(["bash", "-lc", "ls && (pytest -q || npm test -- --help || true)"], cwd=clone_target)
-            logs.append(f"Tests result: {test_result[:250]}")
-            status = "success"
-            summary = "Applied a focused repository change and recorded the test attempt."
-            if "exit=" in test_result:
-                status = "partial"
-                summary = "Applied a change, but the test command reported a failure."
-
+                
+            # Otherwise, we edit the file
+            full_path = os.path.join(clone_target, target_file)
+            try:
+                with open(full_path, "r", encoding="utf-8") as f:
+                    old_content = f.read()
+            except Exception:
+                old_content = ""
+                
+            prompt_edit = f"Update this code to fulfill the task: {data.description}\n\nCode:\n{old_content}\n\nReturn ONLY the fully updated code, no markdown wrapping."
+            new_content = llm.invoke(prompt_edit).strip()
+            if new_content.startswith("```"):
+                new_content = "\n".join(new_content.split("\n")[1:-1])
+                
+            with open(full_path, "w", encoding="utf-8") as f:
+                f.write(new_content)
+                
+            run_command(["git", "add", "."], cwd=clone_target)
+            run_command(["git", "commit", "-m", f"AI Auto-update: {data.description[:30]}"], cwd=clone_target)
+            push_res = run_command(["git", "push"], cwd=clone_target)
+            
             return TaskOutput(
-                task_id=data.task_id,
-                status=status,
-                result=textwrap.dedent(f"""
-                Repository processed.
-                Files changed: {', '.join(changed_files)}
-                Test attempt: {test_result}
-                """),
-                summary=summary,
-                next_agent=None,
-                logs=logs,
+                task_id=data.task_id, status="success",
+                result=f"Edited {target_file}.\nPush result: {push_res}",
+                summary=f"Cloned {repo_url}, edited {target_file}, and committed changes.",
+                logs=logs
             )
-    except Exception as exc:
-        return TaskOutput(
-            task_id=data.task_id,
-            status="error",
-            result=f"Repo operator failed: {exc}",
-            summary="The repository operator could not complete the task.",
-            next_agent=None,
-            logs=logs + [str(exc)],
-        )
+            
+    elif browser_url:
+        logs.append(f"Detected Browser URL: {browser_url}")
+        try:
+            req = urllib.request.Request(browser_url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=10) as response:
+                html = response.read().decode('utf-8')
+            parser = SimpleTextParser()
+            parser.feed(html)
+            page_text = parser.get_text()[:4000] # truncate for LLM
+            
+            answer = llm.invoke(f"Based on this webpage content: {page_text}\n\nTask: {data.description}")
+            return TaskOutput(task_id=data.task_id, status="success", result=answer, summary=f"Analyzed {browser_url}", logs=logs)
+        except Exception as e:
+            return TaskOutput(task_id=data.task_id, status="error", result=str(e), summary="Failed to load webpage.", logs=logs)
 
+    return TaskOutput(
+        task_id=data.task_id, status="success",
+        result="No repository URL or web link was supplied.",
+        summary="No links provided. Skipping operations.",
+        logs=logs + ["Missing links"]
+    )
 
 if __name__ == "__main__":
     import uvicorn
