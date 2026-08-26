@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Send, Paperclip, ChevronDown, Cpu, Plus, MessageSquare,
   Server, Shield, Database, Code, Cloud, Activity,
-  CheckCircle2, XCircle, Loader2, Wifi, WifiOff, Trash2
+  CheckCircle2, XCircle, Loader2, Wifi, WifiOff, Trash2, X, FileText
 } from 'lucide-react';
 
 // ─── Agent Definitions ───────────────────────────────────────────────
@@ -60,19 +60,18 @@ const getAgentMeta = (id: string) => AGENTS.find(a => a.id === id) || AGENTS[4];
 
 // ─── Component ───────────────────────────────────────────────────────
 export default function IDE() {
-  const [activeModelId, setActiveModelId] = useState('orchestrator');
-  const [showModelDropdown, setShowModelDropdown] = useState(false);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [input, setInput] = useState('');
+  const [attachments, setAttachments] = useState<{name: string, content: string}[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeModelId, setActiveModelId] = useState('orchestrator');
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
 
-  // Agent live states
   const [agentStates, setAgentStates] = useState<AgentState[]>(
     AGENTS.map(a => ({ id: a.id, status: 'idle', log: '' }))
   );
 
-  // Chat history
-  const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -161,6 +160,22 @@ export default function IDE() {
     setCurrentSessionId(id);
   }, []);
 
+  // ── File handler ──────────────────────────────────────────────────
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      Array.from(e.target.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          if (ev.target?.result) {
+            setAttachments(prev => [...prev, { name: file.name, content: ev.target!.result as string }]);
+          }
+        };
+        reader.readAsText(file);
+      });
+      e.target.value = '';
+    }
+  };
+
   const deleteSession = (id: string) => {
     setSessions(prev => {
       const next = prev.filter(s => s.id !== id);
@@ -184,7 +199,6 @@ export default function IDE() {
 
   // ── Send handler ──────────────────────────────────────────────────
   const handleSend = async (text: string = input) => {
-    if (!text.trim() || isLoading || !currentSession) return;
     const sid = currentSessionId;
 
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: text };
@@ -388,8 +402,24 @@ export default function IDE() {
 
         {/* Input */}
         <div className="p-4 border-t border-[#1a1a1a]">
+          {/* Attachments preview */}
+          {attachments.length > 0 && (
+            <div className="flex gap-2 mb-2 flex-wrap">
+              {attachments.map((file, i) => (
+                <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1a1a1a] rounded-lg text-xs text-white border border-[#333]">
+                  <FileText className="w-3 h-3 text-[#888]" />
+                  <span className="max-w-[150px] truncate">{file.name}</span>
+                  <button onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))} className="ml-1 text-[#888] hover:text-white">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          
           <div className="flex items-end gap-2 border border-[#1f1f1f] rounded-2xl p-2 bg-[#0a0a0a] focus-within:border-[#333] focus-within:shadow-[0_0_20px_rgba(255,255,255,0.03)] transition-all">
-            <button className="p-1.5 text-[#444] hover:text-[#888] transition-colors">
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple accept="text/*,application/json,text/markdown,.py,.js,.jsx,.ts,.tsx,.html,.css,.csv" />
+            <button onClick={() => fileInputRef.current?.click()} className="p-1.5 text-[#444] hover:text-[#888] transition-colors">
               <Paperclip className="w-4 h-4" />
             </button>
             <textarea value={input} onChange={e => setInput(e.target.value)}
