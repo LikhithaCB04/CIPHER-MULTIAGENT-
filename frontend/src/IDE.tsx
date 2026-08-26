@@ -171,7 +171,11 @@ export default function IDE() {
             setAttachments(prev => [...prev, { name: file.name, content: ev.target!.result as string }]);
           }
         };
-        reader.readAsText(file);
+        if (file.type.startsWith('image/')) {
+          reader.readAsDataURL(file);
+        } else {
+          reader.readAsText(file);
+        }
       });
       e.target.value = '';
     }
@@ -419,7 +423,7 @@ export default function IDE() {
           )}
           
           <div className="flex items-end gap-2 border border-[#1f1f1f] rounded-2xl p-2 bg-[#0a0a0a] focus-within:border-[#333] focus-within:shadow-[0_0_20px_rgba(255,255,255,0.03)] transition-all">
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple accept="text/*,application/json,text/markdown,.py,.js,.jsx,.ts,.tsx,.html,.css,.csv" />
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple accept="image/*,text/*,application/json,text/markdown,.py,.js,.jsx,.ts,.tsx,.html,.css,.csv" />
             <button onClick={() => fileInputRef.current?.click()} className="p-1.5 text-[#444] hover:text-[#888] transition-colors">
               <Paperclip className="w-4 h-4" />
             </button>
