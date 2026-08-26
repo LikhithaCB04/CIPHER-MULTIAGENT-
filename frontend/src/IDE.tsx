@@ -66,15 +66,16 @@ export default function IDE() {
   const [attachments, setAttachments] = useState<{name: string, content: string}[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeModelId, setActiveModelId] = useState('orchestrator');
+  const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
 
   const [agentStates, setAgentStates] = useState<AgentState[]>(
     AGENTS.map(a => ({ id: a.id, status: 'idle', log: '' }))
   );
 
-  const [currentSessionId, setCurrentSessionId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Load sessions from localStorage ──────────────────────────────
   useEffect(() => {
