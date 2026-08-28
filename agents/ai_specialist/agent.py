@@ -162,6 +162,41 @@ def process_task(data: Task):
         except Exception as e:
             return TaskOutput(task_id=data.task_id, status="error", result=str(e), summary="Failed to load webpage.", logs=logs)
 
+    # Handle attached images via context
+    if "data:image" in data.context:
+        logs.append("Detected image in context, routing to Llava vision model...")
+        import requests
+        # Find the base64 string
+        start_idx = data.context.find("data:image")
+        newline_idx = data.context.find("\n", start_idx)
+        if newline_idx == -1: newline_idx = len(data.context)
+        b64_data = data.context[start_idx:newline_idx]
+        
+        if "," in b64_data:
+            b64_data = b64_data.split(",")[1]
+            
+        try:
+            resp = requests.post(
+                f"{OLLAMA_BASE_URL}/api/generate",
+                json={
+                    "model": "llava",
+                    "prompt": data.description or "Describe this image.",
+                    "images": [b64_data],
+                    "stream": False
+                },
+                timeout=180
+            )
+            if resp.status_code == 200:
+                answer = resp.json().get("response", "")
+                return TaskOutput(task_id=data.task_id, status="success", result=answer, summary="Analyzed uploaded image with Llava.", logs=logs)
+            else:
+                err_msg = resp.text
+                if "model 'llava' not found" in err_msg.lower():
+                    return TaskOutput(task_id=data.task_id, status="error", result="Llava model is not installed. Please run `ollama pull llava` in your terminal to enable image support.", summary="Missing Llava vision model.", logs=logs)
+                return TaskOutput(task_id=data.task_id, status="error", result=f"Ollama API Error: {err_msg}", summary="Failed to analyze image.", logs=logs)
+        except Exception as e:
+            return TaskOutput(task_id=data.task_id, status="error", result=f"Error contacting Ollama: {str(e)}", summary="Vision model failed.", logs=logs)
+
     return TaskOutput(
         task_id=data.task_id, status="success",
         result="No repository URL or web link was supplied.",

@@ -150,6 +150,8 @@ async def run_task(task: Task):
     try:
         if "github.com" in task.description.lower() or "http://" in task.description.lower() or "https://" in task.description.lower():
             agents = ["ai_specialist"]
+        elif "data:image" in task.context.lower():
+            agents = ["ai_specialist"]
         else:
             agents_raw = await asyncio.to_thread(llm.invoke, prompt)
             if "[" in agents_raw and "]" in agents_raw:
