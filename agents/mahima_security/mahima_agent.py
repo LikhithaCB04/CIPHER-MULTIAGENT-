@@ -1,4 +1,7 @@
 from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+import json
+import asyncio
 from pydantic import BaseModel
 from langchain_community.llms import Ollama
 import subprocess
@@ -33,90 +36,97 @@ def health_check():
 
 @app.post('/run')
 def run_security_audit(task: Task):
-    logs = []
-    bandit_results = ""
-    semgrep_results = ""
-    safety_results = ""
-
-    # 1. Load the Knowledge Base (The "Truth" files)
-    knowledge = load_knowledge_base()
-    logs.append("Knowledge base loaded.")
-
-    # 2. Static Analysis (Bandit & Semgrep)
-    if task.context:
-        with tempfile.NamedTemporaryFile(suffix='.py', mode='w', delete=False) as f:
-            f.write(task.context)
-            temp_path = f.name
+    def generator():
+        logs = []
+        def log(msg):
+            logs.append(msg)
+            return json.dumps({"type": "agent_thought", "text": msg}) + "\n"
+        logs = []
+        bandit_results = ""
+        semgrep_results = ""
+        safety_results = ""
+    
+        # 1. Load the Knowledge Base (The "Truth" files)
+        knowledge = load_knowledge_base()
+        yield log("Knowledge base loaded.")
+    
+        # 2. Static Analysis (Bandit & Semgrep)
+        if task.context:
+            with tempfile.NamedTemporaryFile(suffix='.py', mode='w', delete=False) as f:
+                f.write(task.context)
+                temp_path = f.name
+            try:
+                b_proc = subprocess.run(['bandit', '-r', temp_path, '-f', 'txt'], capture_output=True, text=True, timeout=30)
+                bandit_results = b_proc.stdout
+                yield log("Bandit scan completed.")
+    
+                s_proc = subprocess.run(['semgrep', 'scan', '--config', 'auto', temp_path], capture_output=True, text=True, timeout=30)
+                semgrep_results = s_proc.stdout
+                yield log("Semgrep scan completed.")
+            except Exception as e:
+                yield log(f"Scanner failure: {str(e)}")
+            finally:
+                os.unlink(temp_path)
+    
+        # 3. Dependency Analysis (Safety)
         try:
-            b_proc = subprocess.run(['bandit', '-r', temp_path, '-f', 'txt'], capture_output=True, text=True, timeout=30)
-            bandit_results = b_proc.stdout
-            logs.append("Bandit scan completed.")
-
-            s_proc = subprocess.run(['semgrep', 'scan', '--config', 'auto', temp_path], capture_output=True, text=True, timeout=30)
-            semgrep_results = s_proc.stdout
-            logs.append("Semgrep scan completed.")
+            safe_proc = subprocess.run(['safety', 'check'], capture_output=True, text=True, timeout=30)
+            safety_results = safe_proc.stdout
+            yield log("Safety scan completed.")
         except Exception as e:
-            logs.append(f"Scanner failure: {str(e)}")
-        finally:
-            os.unlink(temp_path)
-
-    # 3. Dependency Analysis (Safety)
-    try:
-        safe_proc = subprocess.run(['safety', 'check'], capture_output=True, text=True, timeout=30)
-        safety_results = safe_proc.stdout
-        logs.append("Safety scan completed.")
-    except Exception as e:
-        safety_results = f"Safety Error: {str(e)}"
-
-    # 4. AI REASONING with Knowledge Base integration
-    examples = """
-    EXAMPLE:
-    INPUT: os.system('ls')
-    KNOWLEDGE: OWASP #3 Injection - avoid os.system()
-    RESULT: REJECTED. High Risk. Use subprocess.run() instead.
-    """
-
-    system_prompt = f"""
-    You are a Senior Cybersecurity Analyst with 15 years of experience and deep OWASP Top 10 expertise. 
-    Your goal is to protect the application from all possible attacks.
-
-    When reviewing code:
-    1. ALWAYS look for SQL Injection, XSS, and Hardcoded Secrets.
-    2. ALWAYS rate the vulnerability as Critical, High, Medium, or Low.
-    3. ALWAYS provide a specific, copy-pasteable code fix.
-    4. NEVER guess; if you aren't sure, state that a manual review is required.
-    5. Be concise, professional, and strict.
+            safety_results = f"Safety Error: {str(e)}"
     
-    YOU MUST BASE YOUR AUDIT ON THE FOLLOWING KNOWLEDGE BASE:
-    {knowledge}
+        # 4. AI REASONING with Knowledge Base integration
+        examples = """
+        EXAMPLE:
+        INPUT: os.system('ls')
+        KNOWLEDGE: OWASP #3 Injection - avoid os.system()
+        RESULT: REJECTED. High Risk. Use subprocess.run() instead.
+        """
     
-    STYLE GUIDE:
-    {examples}
+        system_prompt = f"""
+        You are a Senior Cybersecurity Analyst with 15 years of experience and deep OWASP Top 10 expertise. 
+        Your goal is to protect the application from all possible attacks.
     
-    REAL TASK TO AUDIT:
-    CODE: {task.context}
-    BANDIT: {bandit_results}
-    SEMGREP: {semgrep_results}
-    SAFETY: {safety_results}
+        When reviewing code:
+        1. ALWAYS look for SQL Injection, XSS, and Hardcoded Secrets.
+        2. ALWAYS rate the vulnerability as Critical, High, Medium, or Low.
+        3. ALWAYS provide a specific, copy-pasteable code fix.
+        4. NEVER guess; if you aren't sure, state that a manual review is required.
+        5. Be concise, professional, and strict.
+        
+        YOU MUST BASE YOUR AUDIT ON THE FOLLOWING KNOWLEDGE BASE:
+        {knowledge}
+        
+        STYLE GUIDE:
+        {examples}
+        
+        REAL TASK TO AUDIT:
+        CODE: {task.context}
+        BANDIT: {bandit_results}
+        SEMGREP: {semgrep_results}
+        SAFETY: {safety_results}
+        
+        Please provide a report:
+        - OVERALL RISK SCORE (Based on OWASP standards)
+        - TECHNICAL BREAKDOWN (Reference the OWASP rule number)
+        - DEPENDENCY ALERTS
+        - REMEDIATION
+        - FINAL VERDICT
+        """
+        
+        security_report = llm.invoke(system_prompt)
     
-    Please provide a report:
-    - OVERALL RISK SCORE (Based on OWASP standards)
-    - TECHNICAL BREAKDOWN (Reference the OWASP rule number)
-    - DEPENDENCY ALERTS
-    - REMEDIATION
-    - FINAL VERDICT
-    """
-    
-    security_report = llm.invoke(system_prompt)
+        yield json.dumps({"type": "task_output", "output": {
+                "task_id": task.task_id,
+            'status': 'success',
+            'result': security_report,
+            'summary': 'Knowledge-augmented security audit completed.',
+            'next_agent': 'devops',
+            "logs": logs
+            }}) + "\n"
+    return StreamingResponse(generator(), media_type="application/x-ndjson")
 
-    return {
-        'task_id': task.task_id,
-        'status': 'success',
-        'result': security_report,
-        'summary': 'Knowledge-augmented security audit completed.',
-        'next_agent': 'devops',
-        'logs': logs
-    }
 if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host='localhost', port=8003)
+    uvicorn.run(app, host='0.0.0.0', port=8003)

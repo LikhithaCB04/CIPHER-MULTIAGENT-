@@ -115,7 +115,9 @@ export default function IDE() {
     return () => clearInterval(interval);
   }, []);
 
-  // ── WebSocket for live agent events ──────────────────────────────
+  // ─── WebSocket for live agent events ──────────────────────────────
+  const [activeConfirmations, setActiveConfirmations] = useState<any[]>([]);
+
   useEffect(() => {
     const connect = () => {
       const ws = new WebSocket(`ws://localhost:8000/ws`);
@@ -127,6 +129,14 @@ export default function IDE() {
           setAgentStates(prev => prev.map(a =>
             a.id === payload.agent ? { ...a, status: 'running', log: `Running: ${payload.description?.slice(0,60) || '...'}` } : a
           ));
+        }
+        if (payload.event === 'agent_thought') {
+          setAgentStates(prev => prev.map(a =>
+            a.id === payload.agent ? { ...a, status: 'running', log: payload.text } : a
+          ));
+        }
+        if (payload.event === 'confirmation_required') {
+          setActiveConfirmations(prev => [...prev, payload]);
         }
         if (payload.event === 'agent_finished') {
           setAgentStates(prev => prev.map(a =>
@@ -146,6 +156,13 @@ export default function IDE() {
     connect();
     return () => wsRef.current?.close();
   }, []);
+
+  const handleConfirm = (taskId: string, status: 'approved' | 'denied') => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'confirmation_response', task_id: taskId, status }));
+    }
+    setActiveConfirmations(prev => prev.filter(c => c.task_id !== taskId));
+  };
 
   // ── Session helpers ───────────────────────────────────────────────
   const currentSession = sessions.find(s => s.id === currentSessionId) || sessions[0];
@@ -249,6 +266,38 @@ export default function IDE() {
   // ─────────────────────────────────────────────────────────────────
   return (
     <div className="h-screen w-full flex bg-[#050505] text-white overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+      
+      {activeConfirmations.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#161b22] border border-[#30363d] p-6 rounded-xl shadow-2xl max-w-lg w-full">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-4">
+              <Shield className="w-6 h-6 text-red-500" /> Security Confirmation Required
+            </h2>
+            <div className="bg-[#0d1117] p-4 rounded-lg border border-[#30363d] mb-6">
+              <p className="text-sm text-[#8b949e] mb-1">Agent:</p>
+              <p className="font-mono text-[#c9d1d9] mb-4">{activeConfirmations[0].agent}</p>
+              <p className="text-sm text-[#8b949e] mb-1">Tool:</p>
+              <p className="font-mono text-[#c9d1d9] mb-4">{activeConfirmations[0].tool}</p>
+              <p className="text-sm text-[#8b949e] mb-1">Action:</p>
+              <pre className="font-mono text-[#c9d1d9] text-sm whitespace-pre-wrap">{activeConfirmations[0].action}</pre>
+            </div>
+            <div className="flex gap-4">
+              <button 
+                onClick={() => handleConfirm(activeConfirmations[0].task_id, 'denied')}
+                className="flex-1 px-4 py-2 bg-transparent border border-red-500 text-red-500 rounded-lg hover:bg-red-500/10 transition-colors"
+              >
+                Deny
+              </button>
+              <button 
+                onClick={() => handleConfirm(activeConfirmations[0].task_id, 'approved')}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Approve
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Narrow icon rail ─────────────────────────────────────── */}
       <div className="w-12 flex flex-col items-center py-5 gap-6 border-r border-[#1a1a1a] bg-[#080808]">
@@ -275,7 +324,7 @@ export default function IDE() {
                 key={s.id}
                 initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.95 }}
                 onClick={() => setCurrentSessionId(s.id)}
-                className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all text-xs font-mono ${
+                className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all text-xs font-mono min-w-0 ${
                   s.id === currentSessionId
                     ? 'bg-[#1a1a1a] text-white'
                     : 'text-[#555] hover:text-[#aaa] hover:bg-[#0f0f0f]'
@@ -356,8 +405,8 @@ export default function IDE() {
                       const Icon = meta.icon;
                       return (
                         <motion.div key={idx} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.08 }}
-                          className="p-3 rounded-xl border text-xs font-mono"
-                          style={{ borderColor: meta.color + '30', backgroundColor: meta.glow }}>
+                          className="p-3 rounded-xl border text-xs font-mono bg-[#0a0a0a]"
+                          style={{ borderColor: meta.color + '40' }}>
                           <div className="flex items-center gap-2 mb-2 font-bold uppercase tracking-wider" style={{ color: meta.color }}>
                             <Icon className="w-3 h-3" />{meta.name}
                           </div>
@@ -382,11 +431,14 @@ export default function IDE() {
           </AnimatePresence>
 
           {isLoading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 px-4 py-3 w-fit rounded-2xl rounded-tl-sm bg-[#111] border border-[#1f1f1f]">
-              {['bg-blue-500','bg-purple-500','bg-cyan-500'].map((c, i) => (
-                <span key={i} className={`w-1.5 h-1.5 rounded-full ${c} animate-bounce`}
-                  style={{ animationDelay: `${i * 0.1}s`, boxShadow: `0 0 6px currentColor` }} />
-              ))}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-2 px-4 py-3 w-fit rounded-2xl rounded-tl-sm bg-[#111] border border-[#1f1f1f]">
+              <div className="flex items-center gap-2">
+                {['bg-blue-500','bg-purple-500','bg-cyan-500'].map((c, i) => (
+                  <span key={i} className={`w-1.5 h-1.5 rounded-full ${c} animate-bounce`}
+                    style={{ animationDelay: `${i * 0.1}s`, boxShadow: `0 0 6px currentColor` }} />
+                ))}
+              </div>
+              <span className="text-[10px] text-[#666] font-mono">Generating response... (This may take several minutes)</span>
             </motion.div>
           )}
           <div ref={messagesEndRef} />
@@ -447,7 +499,6 @@ export default function IDE() {
         </div>
       </div>
 
-      {/* ── Agent Canvas Panel ─────── */}
       <div className="flex-1 flex flex-col bg-[#050505]">
         {/* Header */}
         <div className="h-12 border-b border-[#1a1a1a] flex items-center justify-between px-5 bg-[#080808]">
@@ -464,9 +515,11 @@ export default function IDE() {
         </div>
 
         {/* Canvas Area */}
-        <div className="flex-1 relative">
-          <AgentCanvas agentStates={agentStates} />
-        </div>
+        {(Object.keys(agentStates).length > 0) && (
+          <div className="w-[450px] border-l border-[#1a1a1a] relative bg-[#050505] flex-shrink-0">
+            <AgentCanvas agentStates={agentStates} />
+          </div>
+        )}
       </div>
     </div>
   );

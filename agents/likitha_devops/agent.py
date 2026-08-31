@@ -41,36 +41,48 @@ async def health_check():
     return {"status": "ok"}
 
 
-@app.post("/run", response_model=TaskOutput)
-async def run_devops_task(task: TaskInput):
-    logs = [f"Received devops task {task.task_id}"]
-    try:
-        prompt = f"""
-        You are a Senior DevOps and Cloud Architect.
-        TASK: {task.description}
-        CONTEXT: {task.context}
+from fastapi.responses import StreamingResponse
+import json
 
-        Provide a concise deployment plan with a Dockerfile, docker-compose snippet,
-        and CI recommendations.
-        """
-        response = llm.invoke(prompt)
-        return TaskOutput(
-            task_id=task.task_id,
-            status="success",
-            result=response,
-            summary="Generated a deployment-oriented response using the shared contract format.",
-            next_agent=None,
-            logs=logs + ["Prepared infrastructure guidance"],
-        )
-    except Exception as exc:
-        return TaskOutput(
-            task_id=task.task_id,
-            status="error",
-            result=f"DevOps agent failed: {exc}",
-            summary="The deployment assistant could not complete the request.",
-            next_agent=None,
-            logs=logs + [str(exc)],
-        )
+@app.post("/run")
+async def run_devops_task(task: TaskInput):
+    async def generator():
+        logs = []
+        def log(msg):
+            logs.append(msg)
+            return json.dumps({"type": "agent_thought", "text": msg}) + "\n"
+        
+        yield log(f"Received devops task {task.task_id}")
+        try:
+            prompt = f"""
+            You are a Senior DevOps and Cloud Architect.
+            TASK: {task.description}
+            CONTEXT: {task.context}
+
+            Provide a concise deployment plan with a Dockerfile, docker-compose snippet,
+            and CI recommendations.
+            """
+            response = llm.invoke(prompt)
+            yield log("Prepared infrastructure guidance")
+            yield json.dumps({"type": "task_output", "output": dict(
+                task_id=task.task_id,
+                status="success",
+                result=response,
+                summary="Generated a deployment-oriented response using the shared contract format.",
+                next_agent=None,
+                logs=logs,
+            )}) + "\n"
+        except Exception as exc:
+            yield log(str(exc))
+            yield json.dumps({"type": "task_output", "output": dict(
+                task_id=task.task_id,
+                status="error",
+                result=f"DevOps agent failed: {exc}",
+                summary="The deployment assistant could not complete the request.",
+                next_agent=None,
+                logs=logs,
+            )}) + "\n"
+    return StreamingResponse(generator(), media_type="application/x-ndjson")
 
 
 if __name__ == "__main__":

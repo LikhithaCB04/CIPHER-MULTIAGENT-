@@ -60,43 +60,50 @@ interface AgentCanvasProps {
 
 export default function AgentCanvas({ agentStates }: AgentCanvasProps) {
   const nodes: Node[] = useMemo(() => {
-    return [
+    const activeStates = agentStates.filter(s => s.status !== 'idle');
+    
+    const baseNodes = [
       {
         id: 'orchestrator',
         type: 'agentNode',
-        position: { x: 50, y: 300 },
-        data: { id: 'orchestrator', name: 'Orchestrator', status: 'idle', log: 'Routing tasks...' }
-      },
-      ...['fullstack', 'data_science', 'security', 'devops', 'ai_specialist'].map((id, index) => {
-        const state = agentStates.find(s => s.id === id) || { status: 'idle', log: '' };
-        return {
-          id,
-          type: 'agentNode',
-          position: { x: 500, y: 50 + index * 180 },
-          data: {
-            id,
-            name: id.replace('_', ' ').toUpperCase(),
-            status: state.status,
-            log: state.log
-          }
-        };
-      })
+        position: { x: 50, y: window.innerHeight / 2 - 100 },
+        data: { id: 'orchestrator', name: 'CIPHER Orchestrator', status: activeStates.length > 0 ? 'running' : 'idle', log: activeStates.length > 0 ? 'Managing pipeline...' : 'Awaiting tasks...' }
+      }
     ];
+
+    const mappedNodes = activeStates.map((state, index) => {
+      return {
+        id: state.id,
+        type: 'agentNode',
+        position: { x: 450, y: 50 + index * 180 },
+        data: {
+          id: state.id,
+          name: state.id.replace('_', ' ').toUpperCase(),
+          status: state.status,
+          log: state.log
+        }
+      };
+    });
+    
+    return [...baseNodes, ...mappedNodes];
   }, [agentStates]);
 
   const edges: Edge[] = useMemo(() => {
-    const runningAgents = agentStates.filter(s => s.status === 'running').map(s => s.id);
-    return ['fullstack', 'data_science', 'security', 'devops', 'ai_specialist'].map(id => ({
-      id: `e-orch-${id}`,
-      source: 'orchestrator',
-      target: id,
-      animated: runningAgents.includes(id),
-      style: { stroke: runningAgents.includes(id) ? '#6366f1' : '#333', strokeWidth: 2 },
-      markerEnd: {
-        type: MarkerType.ArrowClosed,
-        color: runningAgents.includes(id) ? '#6366f1' : '#333',
-      },
-    }));
+    const activeStates = agentStates.filter(s => s.status !== 'idle');
+    return activeStates.map(state => {
+      const isRunning = state.status === 'running';
+      return {
+        id: `e-orch-${state.id}`,
+        source: 'orchestrator',
+        target: state.id,
+        animated: isRunning,
+        style: { stroke: isRunning ? '#6366f1' : '#3b82f6', strokeWidth: 2 },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: isRunning ? '#6366f1' : '#3b82f6',
+        },
+      };
+    });
   }, [agentStates]);
 
   return (

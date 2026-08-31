@@ -55,6 +55,11 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
       - VITE_API_URL=http://localhost:8000
+      - DATA_SCIENCE_HOST=deepthi-agent
+      - FULLSTACK_HOST=ayesha-agent
+      - SECURITY_HOST=mahima-agent
+      - DEVOPS_HOST=likitha-agent
+      - AI_SPECIALIST_HOST=ai-specialist-agent
     restart: unless-stopped
 
   ai-specialist-agent:
@@ -94,6 +99,8 @@ services:
       context: ./agents/likitha_devops
       dockerfile: Dockerfile
     container_name: likitha-agent
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # WARNING: Gives agent root-equivalent access to host machine
     ports:
       - "8004:8004"
     environment:
@@ -146,19 +153,6 @@ services:
         - "5173:5173"
       environment:
         - VITE_API_URL=http://localhost:8000
-      depends_on:
-        - master-orchestrator
-      restart: unless-stopped
-  
-  dashboard:
-      build:
-        context: .
-        dockerfile: dashboard/Dockerfile
-      container_name: cipher-dashboard
-      ports:
-        - "8501:8501"
-      environment:
-        - ORCHESTRATOR_URL=http://master-orchestrator:8000
       depends_on:
         - master-orchestrator
       restart: unless-stopped

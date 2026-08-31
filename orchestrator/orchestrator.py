@@ -50,12 +50,14 @@ class Task(BaseModel):
 # Map of agents to their docker-compose service name + the port each
 # agent's own Dockerfile actually binds uvicorn to. Keep this in sync with
 AGENT_SERVICES = {
-    "data_science": {"host": "127.0.0.1", "port": 8001},
-    "fullstack": {"host": "127.0.0.1", "port": 8002},
-    "security": {"host": "127.0.0.1", "port": 8003},
-    "devops": {"host": "127.0.0.1", "port": 8004},
-    "ai_specialist": {"host": "127.0.0.1", "port": 8005},
+    "data_science": {"host": os.environ.get("DATA_SCIENCE_HOST", "localhost"), "port": 8001},
+    "fullstack": {"host": os.environ.get("FULLSTACK_HOST", "localhost"), "port": 8002},
+    "security": {"host": os.environ.get("SECURITY_HOST", "localhost"), "port": 8003},
+    "devops": {"host": os.environ.get("DEVOPS_HOST", "localhost"), "port": 8004},
+    "ai_specialist": {"host": os.environ.get("AI_SPECIALIST_HOST", "localhost"), "port": 8005},
 }
+
+CONFIRMATION_STATE = {}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -63,10 +65,20 @@ async def websocket_endpoint(websocket: WebSocket):
     connected_clients.add(websocket)
     try:
         while True:
-            await websocket.receive_text()
+            text = await websocket.receive_text()
+            try:
+                data = json.loads(text)
+                if data.get("type") == "confirmation_response":
+                    CONFIRMATION_STATE[data["task_id"]] = data["status"]
+            except Exception:
+                pass
     except Exception:
         connected_clients.discard(websocket)
         await websocket.close()
+
+@app.get("/confirmations/{task_id}")
+async def get_confirmation(task_id: str):
+    return {"status": CONFIRMATION_STATE.get(task_id, "pending")}
 
 
 async def broadcast(event: dict):
@@ -167,46 +179,76 @@ async def run_task(task: Task):
     except Exception:
         agents = choose_agents(task.description)
 
+    import httpx
     results = []
-    for index, agent in enumerate(agents):
-        await broadcast({"event": "agent_started", "agent": agent, "task_id": task_id})
-        service = AGENT_SERVICES.get(agent, AGENT_SERVICES["ai_specialist"])
-        url = f"http://{service['host']}:{service['port']}"
-        try:
-            payload = {
-                "task_id": task_id,
-                "task_type": task.task_type,
-                "description": task.description,
-                "context": task.context,
-                "priority": task.priority,
-            }
-            response = await asyncio.to_thread(
-                requests.post,
-                f'{url}/run',
-                json=payload,
-                timeout=120,
-            )
-            response_data = await asyncio.to_thread(response.json)
-            next_agent = response_data.get("next_agent") or (agents[index + 1] if index + 1 < len(agents) else None)
-            summary = response_data.get("summary") or response_data.get("result") or "Agent completed."
-            results.append(response_data)
-            await broadcast({
-                "event": "agent_finished",
-                "agent": agent,
-                "task_id": task_id,
-                "result_summary": summary,
-                "next_agent": next_agent,
-            })
-        except Exception as e:
-            summary = f"Agent {agent} is not reachable at {url}. Please start it."
-            results.append({"error": summary, "task_id": task_id})
-            await broadcast({
-                "event": "agent_finished",
-                "agent": agent,
-                "task_id": task_id,
-                "result_summary": summary,
-                "next_agent": None,
-            })
+    
+    async with httpx.AsyncClient(timeout=900.0) as client:
+        for index, agent in enumerate(agents):
+            await broadcast({"event": "agent_started", "agent": agent, "task_id": task_id})
+            service = AGENT_SERVICES.get(agent, AGENT_SERVICES["ai_specialist"])
+            url = f"http://{service['host']}:{service['port']}"
+            try:
+                payload = {
+                    "task_id": task_id,
+                    "task_type": task.task_type,
+                    "description": task.description,
+                    "context": task.context,
+                    "priority": task.priority,
+                }
+                
+                final_response_data = None
+                
+                async with client.stream("POST", f"{url}/run", json=payload) as response:
+                    response.raise_for_status()
+                    async for line in response.aiter_lines():
+                        if not line.strip():
+                            continue
+                        try:
+                            data = json.loads(line)
+                            if data.get("type") == "agent_thought":
+                                await broadcast({
+                                    "event": "agent_thought",
+                                    "agent": agent,
+                                    "task_id": task_id,
+                                    "text": data.get("text", "")
+                                })
+                            elif data.get("type") == "confirmation_required":
+                                await broadcast({
+                                    "event": "confirmation_required",
+                                    "agent": agent,
+                                    "task_id": data.get("task_id"),
+                                    "tool": data.get("tool"),
+                                    "action": data.get("action")
+                                })
+                            elif data.get("type") == "task_output":
+                                final_response_data = data.get("output", {})
+                        except json.JSONDecodeError:
+                            pass
+                
+                if not final_response_data:
+                    final_response_data = {"result": "No final output returned by agent"}
+                    
+                next_agent = final_response_data.get("next_agent") or (agents[index + 1] if index + 1 < len(agents) else None)
+                summary = final_response_data.get("summary") or final_response_data.get("result") or "Agent completed."
+                results.append(final_response_data)
+                
+                await broadcast({
+                    "event": "agent_finished",
+                    "agent": agent,
+                    "task_id": task_id,
+                    "result_summary": summary,
+                    "next_agent": next_agent,
+                })
+            except Exception as e:
+                summary = f"Agent {agent} is not reachable at {url} or failed. Error: {str(e)}"
+                results.append({"error": summary, "task_id": task_id})
+                await broadcast({
+                    "event": "agent_finished",
+                    "agent": agent,
+                    "task_id": task_id,
+                    "result_summary": summary,
+                    "next_agent": None,
+                })
 
     await broadcast({"event": "pipeline_complete", "task_id": task_id})
     return {'task_id': task_id, 'agents_used': agents, 'results': results}
