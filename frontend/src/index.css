@@ -3,9 +3,27 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --bg-canvas: #0A0A0F;
+    --bg-dot: #1A1A24;
+    --card-surface: rgba(20, 20, 28, 0.85);
+    --card-border: rgba(255, 255, 255, 0.08);
+    --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --radius-card: 16px;
+
+    /* Agent Accents */
+    --accent-deepthi: #3B82F6;
+    --accent-ayeesha: #A855F7;
+    --accent-mahima: #EF4444;
+    --accent-likitha: #22C55E;
+    --accent-ai-specialist: #F59E0B;
+  }
+
   body {
-    background-color: #050505;
+    background-color: var(--bg-canvas);
     color: #ffffff;
+    font-family: var(--font-ui);
     @apply antialiased overflow-hidden selection:bg-white selection:text-black;
   }
 }
@@ -33,5 +51,21 @@
   }
   .glow-border:hover::before {
     opacity: 1;
+  }
+
+  .canvas-card {
+    background: var(--card-surface);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
+  }
+  
+  .font-ui {
+    font-family: var(--font-ui);
+  }
+  
+  .font-code {
+    font-family: var(--font-mono);
   }
 }
