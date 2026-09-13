@@ -53,6 +53,7 @@ services:
       ayesha-agent:
         condition: service_healthy
     environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
       - CHOKIDAR_USEPOLLING=true
       - VITE_API_URL=http://localhost:8000
       - DATA_SCIENCE_HOST=deepthi-agent
@@ -70,7 +71,7 @@ services:
     ports:
       - "8005:8005"
     environment:
-      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_BASE_URL=http://ollama:11434
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8005/health', timeout=5).read()"]
       interval: 10s
@@ -86,7 +87,7 @@ services:
     ports:
       - "8001:8001"
     environment:
-      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_BASE_URL=http://ollama:11434
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=5).read()"]
       interval: 10s
@@ -99,12 +100,10 @@ services:
       context: ./agents/likitha_devops
       dockerfile: Dockerfile
     container_name: likitha-agent
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock # WARNING: Gives agent root-equivalent access to host machine
     ports:
       - "8004:8004"
     environment:
-      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_BASE_URL=http://ollama:11434
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8004/health', timeout=5).read()"]
       interval: 10s
@@ -120,7 +119,7 @@ services:
     ports:
       - "8003:8003"
     environment:
-      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_BASE_URL=http://ollama:11434
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8003/health', timeout=5).read()"]
       interval: 10s
@@ -136,7 +135,7 @@ services:
     ports:
       - "8002:8002"
     environment:
-      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_BASE_URL=http://ollama:11434
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/health', timeout=5).read()"]
       interval: 10s
