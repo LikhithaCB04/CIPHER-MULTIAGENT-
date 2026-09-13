@@ -16,7 +16,7 @@ except ImportError:  # pragma: no cover - fallback for environments without the 
 
 app = FastAPI()
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
-llm = Ollama(model="phi3", base_url=OLLAMA_BASE_URL)
+llm = Ollama(model="phi3", base_url=OLLAMA_BASE_URL, num_predict=800)
 
 
 class TaskInput(BaseModel):
