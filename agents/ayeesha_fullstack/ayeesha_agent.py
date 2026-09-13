@@ -99,7 +99,7 @@ OLLAMA_BASE_URL = os.environ.get(
     "http://localhost:11434"
 )
 
-llm = OllamaLLM(model="phi3", base_url=OLLAMA_BASE_URL, num_predict=800)
+llm = OllamaLLM(model="phi3:mini", base_url=OLLAMA_BASE_URL, num_predict=800)
 
 
 class TaskInput(BaseModel):

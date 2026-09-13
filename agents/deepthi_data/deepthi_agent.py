@@ -54,7 +54,7 @@ app.add_middleware(
 # --- LLM Setup ---
 # Uses mistral via Ollama. Change model="tinyllama" here if RAM is tight.
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
-llm = Ollama(model="phi3", base_url=OLLAMA_BASE_URL, num_predict=800)
+llm = Ollama(model="phi3:mini", base_url=OLLAMA_BASE_URL, num_predict=800)
  
 # =============================================================================
 # SHARED API CONTRACT — matches shared/api_contracts/contract.json exactly

@@ -94,7 +94,7 @@ const AgentNode = ({ data, id }: { data: NodeData; id: string }) => {
     <>
       <Handle type="target" position={Position.Top} className="!bg-transparent !border-none" />
       <div 
-        className="relative overflow-hidden transition-all duration-300 w-[260px] h-[160px] flex flex-col"
+        className="relative overflow-hidden transition-all duration-300 w-[280px] h-[160px] flex flex-col"
         style={{
           background: 'rgba(20, 20, 28, 0.85)',
           backdropFilter: 'blur(12px)',
@@ -214,11 +214,11 @@ const edgeTypes = { custom: AnimatedEdge };
 // ─── LAYOUT DATA ─────────────────────────────────────────────────
 // Scattered "spatial canvas" layout
 const initialNodes: Node[] = [
-  { id: 'data_science',  type: 'agent', position: { x: 100, y: 50 },  data: { agent: 'data_science', status: 'idle', logs: [] } },
-  { id: 'fullstack',     type: 'agent', position: { x: 500, y: -50 }, data: { agent: 'fullstack', status: 'idle', logs: [] } },
-  { id: 'security',      type: 'agent', position: { x: 900, y: 50 },  data: { agent: 'security', status: 'idle', logs: [] } },
-  { id: 'devops',        type: 'agent', position: { x: 300, y: 300 }, data: { agent: 'devops', status: 'idle', logs: [] } },
-  { id: 'ai_specialist', type: 'agent', position: { x: 700, y: 300 }, data: { agent: 'ai_specialist', status: 'idle', logs: [] } },
+  { id: 'data_science',  type: 'agent', position: { x: 80, y: 200 },  data: { agent: 'data_science', status: 'idle', logs: [] } },
+  { id: 'fullstack',     type: 'agent', position: { x: 380, y: 200 }, data: { agent: 'fullstack', status: 'idle', logs: [] } },
+  { id: 'security',      type: 'agent', position: { x: 680, y: 200 },  data: { agent: 'security', status: 'idle', logs: [] } },
+  { id: 'devops',        type: 'agent', position: { x: 980, y: 200 }, data: { agent: 'devops', status: 'idle', logs: [] } },
+  { id: 'ai_specialist', type: 'agent', position: { x: 1280, y: 200 }, data: { agent: 'ai_specialist', status: 'idle', logs: [] } },
 ];
 const initialEdges: Edge[] = [];
 

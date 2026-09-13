@@ -10,7 +10,7 @@ import os
 
 app = FastAPI()
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
-llm = Ollama(model="phi3", base_url=OLLAMA_BASE_URL, num_predict=800)
+llm = Ollama(model="phi3:mini", base_url=OLLAMA_BASE_URL, num_predict=800)
 
 class Task(BaseModel):
     task_id: str

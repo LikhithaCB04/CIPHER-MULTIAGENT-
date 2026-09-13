@@ -16,7 +16,7 @@ OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 
 try:
     from langchain_community.llms import Ollama
-    llm = Ollama(model="phi3", base_url=OLLAMA_BASE_URL, num_predict=800)
+    llm = Ollama(model="phi3:mini", base_url=OLLAMA_BASE_URL, num_predict=800)
 except ImportError:
     class MockLLM:
         def invoke(self, prompt): return f"LLM is missing, could not process: {prompt[:50]}"
