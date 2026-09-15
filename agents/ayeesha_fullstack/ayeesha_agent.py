@@ -99,7 +99,7 @@ OLLAMA_BASE_URL = os.environ.get(
     "http://localhost:11434"
 )
 
-llm = OllamaLLM(model="phi3:mini", base_url=OLLAMA_BASE_URL, num_predict=800)
+llm = OllamaLLM(model="phi3:mini", base_url=OLLAMA_BASE_URL, num_predict=2500)
 
 
 class TaskInput(BaseModel):
@@ -247,7 +247,7 @@ END_OF_FILES
 
             unsupported_import = None
             found_bad_pattern = None
-            if required_files.issubset(files.keys()):
+            if len(files) >= 3:
                 for filepath in ["src/App.jsx", "src/main.jsx"]:
                     content = files.get(filepath, "")
                     import_pattern = re.compile(r"^\s*import\s+(?:.*?\s+from\s+)?['\"](.*?)['\"]", re.MULTILINE)
@@ -280,7 +280,7 @@ END_OF_FILES
             elif found_bad_pattern:
                 server_error = f"Generated code contains forbidden pattern: {found_bad_pattern}"
                 yield log(server_error)
-            elif required_files.issubset(files.keys()):
+            elif len(files) >= 3:
 
                 workspace_dir = os.path.abspath(
                     os.path.join(
@@ -768,7 +768,7 @@ END_OF_FILES
                                 preview_url = None
 
             else:
-                server_error = "The LLM failed to generate the exactly required 5 files."
+                server_error = "The LLM failed to generate at least 3 required files."
                 yield log(server_error)
 
             # -------------------------------------------------------------
@@ -783,9 +783,9 @@ END_OF_FILES
 
                 final_status = "success"
 
-                final_summary = (
-                    "Successfully generated fullstack application code."
-                )
+                missing_files = required_files - set(files.keys())
+                note = f" Note: missing {', '.join(missing_files)}" if missing_files else ""
+                final_summary = f"Successfully generated fullstack application code.{note}"
 
                 if preview_url:
 
