@@ -154,9 +154,10 @@ async def run_task(task: Task):
     You are a task router for a multi-agent AI system.
     Given this task: {task.description}
     If the task mentions a git URL, github, or repository, route it to ai_specialist.
+    If the task is a general greeting, small talk, or doesn't clearly require data analysis, code generation, security review, or deployment work, default to fullstack.
     Otherwise choose one or more agents from: data_science, fullstack, security, devops.
     Do NOT route to ai_specialist unless a repository is explicitly mentioned.
-    Return ONLY a JSON list like: ["fullstack"] or ["data_science", "devops"]
+    CRITICAL: Return ONLY a valid JSON array of strings, no markdown, no backticks, no explanation. Example: ["fullstack"] or ["data_science", "devops"]
     '''
 
     try:
