@@ -239,6 +239,7 @@ END_OF_FILES
                 data.task_id
             ) or "default_task"
 
+            os.makedirs("workspace", exist_ok=True)
             with open(f"workspace/{safe_task_id}_raw.txt", "w", encoding="utf-8") as f:
                 f.write(generated_code)
 
