@@ -71,8 +71,23 @@ def parse_markdown_files(md_content):
                     files["src/App.css"] = block.strip()
 
     # Final sanitization
+    contamination_markers = [
+        "02. Functional React Application",
+        "Task:",
+        "You are a code generator",
+        "Generate these two files",
+        "For App.jsx:",
+        "For App.css:",
+        "Output EXACTLY",
+        "Do not output anything else"
+    ]
     for k in files:
-        files[k] = files[k].replace("end-of-content", "").replace("END_OF_FILES", "")
+        content = files[k].replace("end-of-content", "").replace("END_OF_FILES", "")
+        for marker in contamination_markers:
+            idx = content.find(marker)
+            if idx != -1:
+                content = content[:idx]
+        files[k] = content.strip()
 
     return {k: v for k, v in files.items() if k in allowlist}
 
@@ -143,91 +158,139 @@ async def process_task(data: TaskInput, request: Request):
 
         yield log("Analyzing fullstack requirements...")
 
-        prompt = f'''
+        try:
+            yield log("Generating files in 2 stages...")
+            
+            async def generate_chunk(prompt_text):
+                content = ""
+                async for chunk in llm.astream(prompt_text):
+                    content += chunk
+                return content.strip()
+
+            base_rules = f"""
 Task: {data.description}
 Context: {data.context}
 
-You are a code generator. Do not discuss the task. Do not explain limitations. Do not argue with the requirements. Generate the requested files immediately.
+You are a code generator. Do not discuss the task.
+ABSOLUTE RULE: No external dependencies other than react and react-dom.
+ABSOLUTE RULE: Do NOT import any local files other than ./App and ./App.css. Everything else MUST be inline.
+ABSOLUTE RULE: Do NOT use fake placeholders or omit implementations.
+"""
 
-REQUIREMENTS:
-- ONLY App.jsx and App.css need meaningful creative generation.
-- Keep App.jsx SHORT (60-80 lines maximum).
-- Keep App.css SHORT (100-130 lines maximum).
-- App.jsx must include: navbar, hero, skills, exactly 3 project cards, contact.
-- DO NOT use external images, external libraries, placeholder image paths, SVG.
-- ALL COMPONENTS MUST BE IN src/App.jsx. Start App.jsx exactly with `import React from 'react'; import './App.css';` AND DO NOT ADD ANY OTHER IMPORTS.
-- For project cards, use text/gradient/card styling instead of <img> elements. DO NOT use <img /> tags.
-- Use simple hardcoded arrays only if necessary.
-- Visual design using CSS only: dark background, accent colors using CSS gradients, glass-like cards using rgba, rounded corners, subtle shadows, hover transform, responsive grid, responsive navbar, clear typography, consistent spacing.
-- Complete export default App.
-
-YOU MUST OUTPUT ALL 5 FILES EXACTLY AS SHOWN BELOW, REPLACING "// your code here" WITH THE ACTUAL CODE. DO NOT OMIT ANY FILES.
-
-FILE: package.json
+            yield log("Injecting fixed Vite infrastructure files...")
+            c1 = """FILE: package.json
 ```json
-{{
+{
   "name": "portfolio",
-  "version": "1.0.0",
   "private": true,
+  "version": "1.0.0",
   "type": "module",
-  "scripts": {{"dev":"vite","build":"vite build"}},
-  "dependencies": {{"react":"^18.2.0","react-dom":"^18.2.0"}},
-  "devDependencies": {{"vite":"^5.0.0","@vitejs/plugin-react":"^4.0.0"}}
-}}
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.0.0",
+    "vite": "^4.4.5"
+  }
+}
 ```
 
 FILE: index.html
 ```html
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>AI/ML Portfolio</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>React App</title>
 </head>
 <body>
-<div id="root"></div>
-<script type="module" src="/src/main.jsx"></script>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
 ```
 
 FILE: src/main.jsx
 ```jsx
-import React from 'react';
-import {{createRoot}} from 'react-dom/client';
-import App from './App';
-import './App.css';
-createRoot(document.getElementById('root')).render(<App />);
-```
+import React from 'react'
+import { createRoot } from 'react-dom/client'
+import App from './App'
+import './App.css'
 
+createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+)
+```"""
+
+            yield log("Call 1: Generating UI files (App.jsx, App.css)...")
+            p2 = base_rules + """
+Generate these two files together in one compact response:
+1. src/App.jsx
+2. src/App.css
+
+Generate a BASIC but COMPLETE functional website. Keep it intentionally small.
+
+For App.jsx:
+* actual React JSX
+* className styling
+* all components defined inside App.jsx
+* local sample data where useful
+* simple useState interaction
+* no backend/API
+* no fetch
+* no axios
+* no Redux
+* no React Router
+* no external UI libraries
+* no react-icons
+* no local component imports
+* only ./App.css if an import is needed
+* responsive layout
+* navbar, hero/content section, a few cards, footer
+* basic interaction if requested
+* target 100-180 lines maximum
+* prefer reusable arrays and .map()
+* NO placeholders, NO "due to brevity", NO "your code here"
+
+For App.css:
+* complete styling for the generated App.jsx
+* responsive layout
+* no @import
+* no placeholder CSS
+* target 100-180 lines maximum
+
+Prioritize:
+1. syntactically valid code
+2. compact implementation
+3. completing the requested functionality
+4. avoiding duplicated code and explanations
+
+Output EXACTLY these two file blocks in the standard format:
 FILE: src/App.jsx
 ```jsx
-import React from 'react';
-import './App.css';
-// your code here
+...
 ```
 
 FILE: src/App.css
 ```css
-/* your code here */
+...
 ```
 
-END_OF_FILES
-'''
+Do not output anything else. Do NOT include explanations, markdown outside FILE blocks, TODOs, or the word placeholder.
+"""
+            c2 = await generate_chunk(p2)
+            if await request.is_disconnected(): return
 
-        try:
-
-            yield log("Generating code with LLM...")
-
-            generated_code = ""
-
-            async for chunk in llm.astream(prompt):
-
-                if await request.is_disconnected():
-                    return
-
-                generated_code += chunk
+            generated_code = c1 + "\n\n" + c2
 
             yield log("Code generation complete. Parsing files...")
 
@@ -249,6 +312,7 @@ END_OF_FILES
 
             unsupported_import = None
             found_bad_pattern = None
+            found_semantic_error = None
             if required_files.issubset(files.keys()):
                 for filepath in ["src/App.jsx", "src/main.jsx"]:
                     content = files.get(filepath, "")
@@ -263,12 +327,25 @@ END_OF_FILES
 
                 bad_patterns = [
                     "/path/to/", "project1.jpg", "project2.jpg", "project3.jpg",
-                    "end-of-content", "END_OF_FILES", "##", "# "
+                    "end-of-content", "END_OF_FILES", "##", "# ",
+                    "TODO", "FIXME", "coming soon", "// placeholder", "/* placeholder", "{/* placeholder", "YOUR_CODE_HERE",
+                    "implementation omitted", "code omitted",
+                    "{/* Navbar content */}", "{/* Project cards */}",
+                    "{/* Add content here */}", "{/* More sections */}"
                 ]
                 found_bad_pattern = None
                 if not unsupported_import:
-                    for filepath in ["src/App.jsx", "src/App.css"]:
+                    for filepath in ["src/App.jsx", "src/App.css", "index.html"]:
                         content = files.get(filepath, "")
+                        
+                        if filepath == "src/App.css" and "@import" in content:
+                            found_bad_pattern = "@import"
+                            break
+                            
+                        if filepath == "index.html" and "%PUBLIC_URL%" in content:
+                            found_bad_pattern = "%PUBLIC_URL%"
+                            break
+                            
                         for pattern in bad_patterns:
                             if pattern in content:
                                 found_bad_pattern = pattern
@@ -276,11 +353,36 @@ END_OF_FILES
                         if found_bad_pattern:
                             break
 
+                semantic_bad_patterns = [
+                    "your complete", "define your", "components here",
+                    "should be developed", "due to brevity",
+                    "additional functionalities", "here is", "note:"
+                ]
+                if not unsupported_import and not found_bad_pattern:
+                    app_jsx_content = files.get("src/App.jsx", "")
+                    content_lower = app_jsx_content.lower()
+                    for pattern in semantic_bad_patterns:
+                        if pattern in content_lower:
+                            found_semantic_error = f"Template text detected: '{pattern}'"
+                            break
+                            
+                    # Minimum implementation check
+                    if not found_semantic_error:
+                        if len(app_jsx_content) < 400:
+                            found_semantic_error = "App.jsx is too small to be a complete implementation."
+                        elif "className=" not in app_jsx_content:
+                            found_semantic_error = "App.jsx is missing className styling."
+                        elif "useState" not in app_jsx_content and ".map" not in app_jsx_content:
+                            found_semantic_error = "App.jsx is missing React state or array rendering."
+
             if unsupported_import:
                 server_error = f"Generated code uses an unsupported dependency: {unsupported_import}"
                 yield log(server_error)
             elif found_bad_pattern:
                 server_error = f"Generated code contains forbidden pattern: {found_bad_pattern}"
+                yield log(server_error)
+            elif found_semantic_error:
+                server_error = f"Semantic validation failed: {found_semantic_error}"
                 yield log(server_error)
             elif required_files.issubset(files.keys()):
 
@@ -665,29 +767,55 @@ END_OF_FILES
 
                             if build_proc.returncode != 0:
                                 b_err_str = b_stderr.decode("utf-8", errors="ignore") + "\n" + b_stdout.decode("utf-8", errors="ignore")
-                                yield log("Build failed. Attempting deterministic repair...")
+                                yield log("Build failed. Attempting LLM repair...")
 
                                 repaired = False
                                 app_jsx_path = os.path.join(workspace_dir, "src", "App.jsx")
+                                app_css_path = os.path.join(workspace_dir, "src", "App.css")
 
-                                if os.path.exists(app_jsx_path):
+                                if os.path.exists(app_jsx_path) and os.path.exists(app_css_path):
                                     with open(app_jsx_path, "r", encoding="utf-8") as f:
                                         app_content = f.read()
+                                    with open(app_css_path, "r", encoding="utf-8") as f:
+                                        css_content = f.read()
+                                        
+                                    yield log("Asking LLM to repair the build error...")
+                                    repair_prompt = f"""Repair the existing generated React code. Do not redesign it. Do not remove requested functionality. Fix only syntax, JSX structure, imports, undefined variables, and other build errors shown by the compiler. Return the COMPLETE corrected file. Do not include explanations, markdown outside the FILE block, prompt text, duplicated code, `svgsvg`, TODOs, placeholders, or unrelated task content.
 
-                                    orig_content = app_content
+Vite Build Error:
+{b_err_str}
 
-                                    # Fix missing export default
-                                    if "export default" not in app_content:
-                                        app_content += "\n\nexport default App;\n"
+Current App.jsx:
+```jsx
+{app_content}
+```
 
-                                    # Fix missing React import if used without import
-                                    if "React is not defined" in b_err_str and "import React" not in app_content:
-                                        app_content = "import React from 'react';\n" + app_content
+Current App.css:
+```css
+{css_content}
+```
 
-                                    if app_content != orig_content:
+Output EXACTLY these two file blocks in the standard format:
+FILE: src/App.jsx
+```jsx
+...
+```
+
+FILE: src/App.css
+```css
+...
+```
+"""
+                                    repaired_code = await generate_chunk(repair_prompt)
+                                    repaired_files = parse_markdown_files(repaired_code)
+                                    
+                                    if "src/App.jsx" in repaired_files:
                                         with open(app_jsx_path, "w", encoding="utf-8") as f:
-                                            f.write(app_content)
+                                            f.write(repaired_files["src/App.jsx"])
                                         repaired = True
+                                    if "src/App.css" in repaired_files:
+                                        with open(app_css_path, "w", encoding="utf-8") as f:
+                                            f.write(repaired_files["src/App.css"])
 
                                 if repaired:
                                     yield log("Repair applied. Retrying build...")
@@ -711,63 +839,63 @@ END_OF_FILES
                                     "Starting Vite server on port 5174..."
                                 )
 
-                            # -------------------------------------------------
-                            # Start generated website
-                            # -------------------------------------------------
-                            subprocess.Popen(
-                                [
-                                    npm_cmd,
-                                    "run",
-                                    "dev",
-                                    "--",
-                                    "--host",
-                                    "127.0.0.1",
-                                    "--port",
-                                    "5174",
-                                    "--strictPort"
-                                ],
-                                cwd=workspace_dir,
-                                stdout=subprocess.DEVNULL,
-                                stderr=subprocess.DEVNULL
-                            )
-
-                            yield log(
-                                "Waiting for server to become ready "
-                                "(up to 15s)..."
-                            )
-
-                            ready = False
-
-                            preview_url = (
-                                "http://127.0.0.1:5174"
-                            )
-
-                            for _ in range(15):
-
-                                try:
-
-                                    urllib.request.urlopen(
-                                        preview_url,
-                                        timeout=1
-                                    )
-
-                                    ready = True
-                                    break
-
-                                except Exception:
-
-                                    await asyncio.sleep(1)
-
-                            if not ready:
-
-                                server_error = (
-                                    "Server failed to start or bind "
-                                    "to port 5174 within 15 seconds."
+                                # -------------------------------------------------
+                                # Start generated website
+                                # -------------------------------------------------
+                                subprocess.Popen(
+                                    [
+                                        npm_cmd,
+                                        "run",
+                                        "dev",
+                                        "--",
+                                        "--host",
+                                        "127.0.0.1",
+                                        "--port",
+                                        "5174",
+                                        "--strictPort"
+                                    ],
+                                    cwd=workspace_dir,
+                                    stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.DEVNULL
                                 )
 
-                                yield log(server_error)
+                                yield log(
+                                    "Waiting for server to become ready "
+                                    "(up to 15s)..."
+                                )
 
-                                preview_url = None
+                                ready = False
+
+                                preview_url = (
+                                    "http://127.0.0.1:5174"
+                                )
+
+                                for _ in range(15):
+
+                                    try:
+
+                                        urllib.request.urlopen(
+                                            preview_url,
+                                            timeout=1
+                                        )
+
+                                        ready = True
+                                        break
+
+                                    except Exception:
+
+                                        await asyncio.sleep(1)
+
+                                if not ready:
+
+                                    server_error = (
+                                        "Server failed to start or bind "
+                                        "to port 5174 within 15 seconds."
+                                    )
+
+                                    yield log(server_error)
+
+                                    preview_url = None
 
             else:
                 server_error = "The LLM failed to generate the exactly required 5 files."
