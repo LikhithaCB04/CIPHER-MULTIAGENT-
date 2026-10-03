@@ -157,7 +157,6 @@ const AgentNode = ({ data, id }: { data: NodeData; id: string }) => {
 
 
 // --- CUSTOM EDGES ----------------------------------------------------------------
-import { getBezierPath } from 'reactflow';
 const AnimatedEdge = ({
   id,
   sourceX,
