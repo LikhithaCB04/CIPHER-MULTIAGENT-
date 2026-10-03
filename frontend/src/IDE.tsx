@@ -189,7 +189,7 @@ export default function IDE() {
             setAttachments(prev => [...prev, { name: file.name, content: ev.target!.result as string }]);
           }
         };
-        if (file.type.startsWith('image/')) {
+        if (file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
           reader.readAsDataURL(file);
         } else {
           reader.readAsText(file);
@@ -234,10 +234,13 @@ export default function IDE() {
     setAgentStates(prev => prev.map(a => ({ ...a, status: 'idle', log: '' })));
 
     try {
+      const contextData = attachments.length > 0 ? JSON.stringify({ files: attachments }) : '';
+      setAttachments([]);
+      
       const res = await fetch(`${API}/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description: text, context: '' }),
+        body: JSON.stringify({ description: text, context: contextData }),
       });
       const data = await res.json();
 
@@ -476,7 +479,7 @@ export default function IDE() {
           )}
           
           <div className="flex items-end gap-2 border border-[#1f1f1f] rounded-2xl p-2 bg-[#0a0a0a] focus-within:border-[#333] focus-within:shadow-[0_0_20px_rgba(255,255,255,0.03)] transition-all">
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple accept="image/*,text/*,application/json,text/markdown,.py,.js,.jsx,.ts,.tsx,.html,.css,.csv" />
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple accept="image/*,text/*,application/json,text/markdown,.py,.js,.jsx,.ts,.tsx,.html,.css,.csv,.xlsx,.xls" />
             <button onClick={() => fileInputRef.current?.click()} className="p-1.5 text-[#444] hover:text-[#888] transition-colors">
               <Paperclip className="w-4 h-4" />
             </button>

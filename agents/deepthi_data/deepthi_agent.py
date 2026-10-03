@@ -94,6 +94,8 @@ class TaskOutput(BaseModel):
     summary: str
     next_agent: Optional[str] = None
     logs: list
+    files: Optional[list] = None
+    files: Optional[list] = None
  
 # =============================================================================
 # INTERNAL MODELS — used by sub-features, not exposed to contract
@@ -689,7 +691,7 @@ def run_visualization(df: pd.DataFrame, description: str, logs: list) -> str:
     cat_cols = df.select_dtypes(include="object").columns.tolist()
  
     charts_created = []
-    output_dir = "/tmp/agent_charts"
+    output_dir = f"/tmp/{os.environ.get('TASK_ID_HACK', 'agent_charts')}"
     os.makedirs(output_dir, exist_ok=True)
  
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -793,31 +795,37 @@ def run_task(task: TaskInput):
         data_source = "none"
  
         if task.context and task.context.strip():
-            # Try to parse as CSV string
+            import base64, io
             try:
-                df = pd.read_csv(StringIO(task.context))
-                data_source = "user_provided_csv"
-                logs.append(f"Loaded user CSV: {df.shape}")
-            except Exception:
+                ctx_data = json.loads(task.context)
+                if "files" in ctx_data and len(ctx_data["files"]) > 0:
+                    file_obj = ctx_data["files"][0]
+                    file_name = file_obj.get("name", "")
+                    file_data = file_obj.get("data", "")
+                    
+                    if "base64," in file_data:
+                        b64_str = file_data.split("base64,")[1]
+                        raw_bytes = base64.b64decode(b64_str)
+                        if file_name.endswith(".csv"):
+                            df = pd.read_csv(io.BytesIO(raw_bytes))
+                            data_source = "user_uploaded_csv"
+                        else:
+                            df = pd.read_excel(io.BytesIO(raw_bytes), engine="openpyxl")
+                            data_source = "user_uploaded_excel"
+                    else:
+                        # plain text csv
+                        df = pd.read_csv(io.StringIO(file_data))
+                        data_source = "user_uploaded_csv"
+                        
+                    logs.append(f"Loaded {data_source}: {df.shape}")
+            except Exception as e:
                 pass
-
-            # Try Excel workbook content if the context looks like an uploaded spreadsheet path.
+                
             if df is None:
+                # Fallback to direct parse
                 try:
-                    if os.path.exists(task.context):
-                        df = pd.read_excel(task.context, engine="openpyxl")
-                        data_source = "user_provided_excel"
-                        logs.append(f"Loaded user Excel: {df.shape}")
-                except Exception:
-                    pass
- 
-            # Try JSON
-            if df is None:
-                try:
-                    data = json.loads(task.context)
-                    df = pd.DataFrame(data)
-                    data_source = "user_provided_json"
-                    logs.append(f"Loaded user JSON: {df.shape}")
+                    df = pd.read_csv(StringIO(task.context))
+                    data_source = "user_provided_csv"
                 except Exception:
                     pass
  
@@ -839,7 +847,11 @@ def run_task(task: TaskInput):
         # 2. DETECT INTENT AND ROUTE
         # -----------------------------------------------
         intent = detect_task_intent(task.description)
+        desc_lower = task.description.lower()
+        if "dashboard" in desc_lower and ("clean" in desc_lower or "sort" in desc_lower or "order" in desc_lower):
+            intent = "custom_dashboard"
         logs.append(f"Detected task intent: {intent} | Data source: {data_source}")
+        os.environ["TASK_ID_HACK"] = task.task_id
  
         result = ""
         next_agent = None  # Data agent typically ends the pipeline
@@ -848,7 +860,26 @@ def run_task(task: TaskInput):
         # -----------------------------------------------
         # 3. EXECUTE THE RIGHT ANALYSIS
         # -----------------------------------------------
-        if intent == "eda":
+        if intent == "custom_dashboard":
+            config = CleaningConfig()
+            if "median" in desc_lower: config.strategy_missing = "median"
+            elif "mode" in desc_lower: config.strategy_missing = "mode"
+            elif "drop" in desc_lower: config.strategy_missing = "drop"
+            
+            df_clean, cleaning_result = run_cleaning(df, config, logs)
+            
+            # Basic sort logic
+            for col in df_clean.columns:
+                if col.lower() in desc_lower:
+                    df_clean = df_clean.sort_values(by=col, ascending=("desc" not in desc_lower))
+                    logs.append(f"Sorted data by {col}")
+                    break
+            
+            df = df_clean
+            visualize_result = run_visualization(df, task.description, logs)
+            result = f"Custom Analytics Pipeline Executed.\n\n{cleaning_result}\n\n{visualize_result}"
+
+        elif intent == "eda":
             result = run_eda(df, logs)
  
         elif intent == "clean":
@@ -867,7 +898,7 @@ def run_task(task: TaskInput):
         elif intent == "cluster":
             result = run_clustering(df, task.description, logs)
  
-        elif intent == "visualize":
+        if intent in ["visualize", "custom_dashboard"]:
             result = run_visualization(df, task.description, logs)
  
         elif intent == "statistics":
@@ -909,13 +940,28 @@ Be concise and professional.
 """)
         logs.append("Task completed successfully")
  
+        out_files = []
+        if intent in ["clean", "pipeline", "custom_dashboard"] and df is not None:
+            import base64, io
+            output = io.BytesIO()
+            df.to_excel(output, index=False, engine='openpyxl')
+            b64 = base64.b64encode(output.getvalue()).decode('utf-8')
+            out_files.append({"name": f"processed_{task.task_id}.xlsx", "data": f"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}"})
+        if intent in ["visualize", "custom_dashboard"]:
+            import glob, base64
+            for img_file in glob.glob(f"/tmp/{task.task_id}/*.png"):
+                with open(img_file, "rb") as im_f:
+                    b64 = base64.b64encode(im_f.read()).decode('utf-8')
+                    out_files.append({"name": os.path.basename(img_file), "data": f"data:image/png;base64,{b64}"})
+
         return TaskOutput(
             task_id=task.task_id,
             status="success",
             result=result,
             summary=summary,
             next_agent=next_agent,
-            logs=logs
+            logs=logs,
+            files=out_files if out_files else None
         )
  
     except Exception as e:

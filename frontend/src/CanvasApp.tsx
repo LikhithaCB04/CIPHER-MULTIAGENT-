@@ -214,11 +214,11 @@ const edgeTypes = { custom: AnimatedEdge };
 // ─── LAYOUT DATA ─────────────────────────────────────────────────
 // Scattered "spatial canvas" layout
 const initialNodes: Node[] = [
-  { id: 'data_science',  type: 'agent', position: { x: 80, y: 200 },  data: { agent: 'data_science', status: 'idle', logs: [] } },
-  { id: 'fullstack',     type: 'agent', position: { x: 380, y: 200 }, data: { agent: 'fullstack', status: 'idle', logs: [] } },
-  { id: 'security',      type: 'agent', position: { x: 680, y: 200 },  data: { agent: 'security', status: 'idle', logs: [] } },
-  { id: 'devops',        type: 'agent', position: { x: 980, y: 200 }, data: { agent: 'devops', status: 'idle', logs: [] } },
-  { id: 'ai_specialist', type: 'agent', position: { x: 1280, y: 200 }, data: { agent: 'ai_specialist', status: 'idle', logs: [] } },
+  { id: 'data_science',  type: 'agent', position: { x: 80, y: 50 },  data: { agent: 'data_science', status: 'idle', logs: [] } },
+  { id: 'fullstack',     type: 'agent', position: { x: 80, y: 250 }, data: { agent: 'fullstack', status: 'idle', logs: [] } },
+  { id: 'security',      type: 'agent', position: { x: 80, y: 450 },  data: { agent: 'security', status: 'idle', logs: [] } },
+  { id: 'devops',        type: 'agent', position: { x: 80, y: 650 }, data: { agent: 'devops', status: 'idle', logs: [] } },
+  { id: 'ai_specialist', type: 'agent', position: { x: 80, y: 850 }, data: { agent: 'ai_specialist', status: 'idle', logs: [] } },
 ];
 const initialEdges: Edge[] = [];
 
@@ -344,21 +344,7 @@ export default function CanvasApp() {
         }
       `}</style>
 
-      {/* Top Chrome */}
-      <header className="absolute top-0 w-full z-50 flex items-center justify-between px-6 py-4 pointer-events-none">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-black font-bold tracking-tighter shadow-[0_0_20px_rgba(255,255,255,0.2)] pointer-events-auto">
-            C.
-          </div>
-          <div className="text-sm font-medium tracking-wide text-zinc-200 pointer-events-auto">CIPHER Multi-Agent</div>
-        </div>
-        <div className="flex items-center gap-2 rounded-full border border-white/5 bg-black/40 px-3 py-1.5 backdrop-blur-md pointer-events-auto">
-          <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-red-500'}`} />
-          <span className="font-mono text-[10px] uppercase tracking-widest text-zinc-400">
-            ws:[{isConnected ? 'connected' : 'disconnected'}]
-          </span>
-        </div>
-      </header>
+      
 
       {/* Main Canvas Area */}
       <div className="flex-1 relative z-10">
@@ -378,29 +364,6 @@ export default function CanvasApp() {
         </ReactFlow>
       </div>
 
-      {/* Floating Input Pill */}
-      <div className="absolute bottom-8 w-full flex justify-center pointer-events-none z-50 px-4">
-        <motion.div 
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="pointer-events-auto flex items-center w-full max-w-2xl rounded-full border border-white/10 bg-[rgba(20,20,28,0.7)] p-2 backdrop-blur-2xl shadow-2xl transition-all focus-within:border-white/30 focus-within:shadow-[0_0_30px_rgba(255,255,255,0.05)]"
-        >
-          <input 
-            value={input} 
-            onChange={(e) => setInput(e.target.value)} 
-            onKeyDown={(e) => e.key === 'Enter' && runTask()}
-            placeholder="Instruct the swarm..." 
-            className="flex-1 bg-transparent px-4 text-sm font-medium text-zinc-100 placeholder-zinc-500 outline-none" 
-          />
-          <button 
-            onClick={runTask} 
-            disabled={!input.trim()}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 text-black transition-transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
-          >
-            <Send size={16} className="mr-0.5 mt-0.5" />
-          </button>
-        </motion.div>
       </div>
-    </div>
   );
 }
