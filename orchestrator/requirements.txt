@@ -3,5 +3,6 @@ uvicorn
 requests
 pydantic
 httpx
-langchain-ollama
 python-multipart
+groq
+# bust cache 2

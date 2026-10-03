@@ -2,3 +2,6 @@ fastapi
 uvicorn
 pydantic
 langchain-community
+
+groq
+# bust cache 2

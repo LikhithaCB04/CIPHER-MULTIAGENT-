@@ -9,6 +9,31 @@ import asyncio
 from pydantic import BaseModel
 from typing import List, Optional
 
+app = FastAPI()
+
+from groq import Groq
+import os
+import asyncio
+
+class GroqProxy:
+    def __init__(self, model_name, max_tokens):
+        self.client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+        self.model = model_name
+        self.max_tokens = max_tokens
+        
+    def invoke(self, prompt):
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=self.max_tokens
+        )
+        return response.choices[0].message.content
+        
+    async def astream(self, prompt):
+        response = await asyncio.to_thread(self.invoke, prompt)
+        yield response
+
+
 
 def parse_markdown_files(md_content):
     files = {}
@@ -91,30 +116,7 @@ def parse_markdown_files(md_content):
 
     return {k: v for k, v in files.items() if k in allowlist}
 
-
-try:
-    from langchain_ollama import OllamaLLM
-except ImportError:
-    class OllamaLLM:
-        def __init__(self, model: str, base_url: str = "http://localhost:11434"):
-            self.model = model
-            self.base_url = base_url
-
-        def invoke(self, prompt: str) -> str:
-            return f"[mock-fullstack] {self.model} responded to: {prompt[:120]}"
-
-        async def astream(self, prompt: str):
-            yield self.invoke(prompt)
-
-
-app = FastAPI()
-
-OLLAMA_BASE_URL = os.environ.get(
-    "OLLAMA_BASE_URL",
-    "http://localhost:11434"
-)
-
-llm = OllamaLLM(model="phi3:mini", base_url=OLLAMA_BASE_URL, num_predict=2500)
+llm = GroqProxy(model_name="llama-3.3-70b-versatile", max_tokens=2500)
 
 
 class TaskInput(BaseModel):

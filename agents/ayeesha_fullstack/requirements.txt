@@ -1,4 +1,6 @@
 fastapi
 uvicorn
 pydantic
-langchain-ollama
+
+groq
+# bust cache 2

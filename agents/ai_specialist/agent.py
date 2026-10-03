@@ -12,15 +12,31 @@ import asyncio
 from pydantic import BaseModel
 
 app = FastAPI()
-OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 
-try:
-    from langchain_community.llms import Ollama
-    llm = Ollama(model="phi3:mini", base_url=OLLAMA_BASE_URL, num_predict=800)
-except ImportError:
-    class MockLLM:
-        def invoke(self, prompt): return f"LLM is missing, could not process: {prompt[:50]}"
-    llm = MockLLM()
+from groq import Groq
+import os
+import asyncio
+
+class GroqProxy:
+    def __init__(self, model_name, max_tokens):
+        self.client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+        self.model = model_name
+        self.max_tokens = max_tokens
+        
+    def invoke(self, prompt):
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=self.max_tokens
+        )
+        return response.choices[0].message.content
+        
+    async def astream(self, prompt):
+        response = await asyncio.to_thread(self.invoke, prompt)
+        yield response
+
+llm = GroqProxy(model_name="llama-3.3-70b-versatile", max_tokens=800)
+
 
 class Task(BaseModel):
     task_id: str
@@ -190,7 +206,6 @@ def process_task(data: Task):
                 
             try:
                 resp = requests.post(
-                    f"{OLLAMA_BASE_URL}/api/generate",
                     json={
                         "model": "llava",
                         "prompt": data.description or "Describe this image.",

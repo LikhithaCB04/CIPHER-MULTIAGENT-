@@ -1,47 +1,12 @@
 services:
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_models:/root/.ollama
-    healthcheck:
-      test: ["CMD", "ollama", "list"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
-      start_period: 20s
-    restart: unless-stopped
-
-  init-ollama:
-    image: ollama/ollama:latest
-    container_name: init-ollama
-    depends_on:
-      ollama:
-        condition: service_healthy
-    environment:
-      - OLLAMA_HOST=http://ollama:11434
-    volumes:
-      - ollama_models:/root/.ollama
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        ollama pull phi3:mini
-    restart: "no"
-
   master-orchestrator:
     build:
       context: ./orchestrator
       dockerfile: Dockerfile
     container_name: master-orchestrator
     ports:
-      - "8000:8000"
+    - 8000:8000
     depends_on:
-      ollama:
-        condition: service_healthy
-      init-ollama:
-        condition: service_completed_successfully
       ai-specialist-agent:
         condition: service_healthy
       deepthi-agent:
@@ -53,108 +18,125 @@ services:
       ayesha-agent:
         condition: service_healthy
     environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - CHOKIDAR_USEPOLLING=true
-      - VITE_API_URL=http://localhost:8000
-      - DATA_SCIENCE_HOST=deepthi-agent
-      - FULLSTACK_HOST=ayesha-agent
-      - SECURITY_HOST=mahima-agent
-      - DEVOPS_HOST=likitha-agent
-      - AI_SPECIALIST_HOST=ai-specialist-agent
+    - CHOKIDAR_USEPOLLING=true
+    - VITE_API_URL=http://localhost:8000
+    - DATA_SCIENCE_HOST=deepthi-agent
+    - FULLSTACK_HOST=ayesha-agent
+    - SECURITY_HOST=mahima-agent
+    - DEVOPS_HOST=likitha-agent
+    - AI_SPECIALIST_HOST=ai-specialist-agent
     restart: unless-stopped
-
+    env_file:
+    - .env
   ai-specialist-agent:
     build:
       context: ./agents/ai_specialist
       dockerfile: Dockerfile
     container_name: ai-specialist-agent
     ports:
-      - "8005:8005"
-    environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
+    - 8005:8005
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8005/health', timeout=5).read()"]
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8005/health',
+        timeout=5).read()
       interval: 10s
       timeout: 10s
       retries: 15
     restart: unless-stopped
-
+    env_file:
+    - .env
   deepthi-agent:
     build:
       context: ./agents/deepthi_data
       dockerfile: Dockerfile
     container_name: deepthi-agent
     ports:
-      - "8001:8001"
-    environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
+    - 8001:8001
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=5).read()"]
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health',
+        timeout=5).read()
       interval: 10s
       timeout: 10s
       retries: 15
     restart: unless-stopped
-
+    env_file:
+    - .env
   likitha-agent:
     build:
       context: ./agents/likitha_devops
       dockerfile: Dockerfile
     container_name: likitha-agent
     ports:
-      - "8004:8004"
-    environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
+    - 8004:8004
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8004/health', timeout=5).read()"]
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8004/health',
+        timeout=5).read()
       interval: 10s
       timeout: 10s
       retries: 15
     restart: unless-stopped
-
+    env_file:
+    - .env
   mahima-agent:
     build:
       context: ./agents/mahima_security
       dockerfile: Dockerfile
     container_name: mahima-agent
     ports:
-      - "8003:8003"
-    environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
+    - 8003:8003
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8003/health', timeout=5).read()"]
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8003/health',
+        timeout=5).read()
       interval: 10s
       timeout: 10s
       retries: 15
     restart: unless-stopped
-
+    env_file:
+    - .env
   ayesha-agent:
     build:
       context: ./agents/ayeesha_fullstack
       dockerfile: Dockerfile
     container_name: ayesha-agent
     ports:
-      - "8002:8002"
-    environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
+    - 8002:8002
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/health', timeout=5).read()"]
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/health',
+        timeout=5).read()
       interval: 10s
       timeout: 10s
       retries: 15
     restart: unless-stopped
-
+    env_file:
+    - .env
   frontend:
-      build:
-        context: ./frontend
-        dockerfile: Dockerfile
-      container_name: cipher-frontend
-      ports:
-        - "5173:5173"
-      environment:
-        - VITE_API_URL=http://localhost:8000
-      depends_on:
-        - master-orchestrator
-      restart: unless-stopped
-  
-volumes:
-  ollama_models:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cipher-frontend
+    ports:
+    - 5173:5173
+    environment:
+    - VITE_API_URL=http://localhost:8000
+    depends_on:
+    - master-orchestrator
+    restart: unless-stopped

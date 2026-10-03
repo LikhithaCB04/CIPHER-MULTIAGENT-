@@ -2,4 +2,6 @@ fastapi
 uvicorn
 langchain
 langchain-community
-ollama
+
+groq
+# bust cache 2
