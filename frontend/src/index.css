@@ -69,3 +69,8 @@
     font-family: var(--font-mono);
   }
 }
+
+/* Hide scrollbar for textarea */
+textarea::-webkit-scrollbar { display: none; }
+textarea { -ms-overflow-style: none; scrollbar-width: none; }
+

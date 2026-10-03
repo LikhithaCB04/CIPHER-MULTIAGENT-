@@ -94,7 +94,7 @@ const AgentNode = ({ data, id }: { data: NodeData; id: string }) => {
     <>
       <Handle type="target" position={Position.Top} className="!bg-transparent !border-none" />
       <div 
-        className="relative overflow-hidden transition-all duration-300 w-[280px] h-[160px] flex flex-col"
+        className="relative overflow-hidden transition-all duration-300 w-[260px] h-[120px] flex flex-col"
         style={{
           background: 'rgba(20, 20, 28, 0.85)',
           backdropFilter: 'blur(12px)',
@@ -215,10 +215,10 @@ const edgeTypes = { custom: AnimatedEdge };
 // Scattered "spatial canvas" layout
 const initialNodes: Node[] = [
   { id: 'data_science',  type: 'agent', position: { x: 80, y: 50 },  data: { agent: 'data_science', status: 'idle', logs: [] } },
-  { id: 'fullstack',     type: 'agent', position: { x: 80, y: 250 }, data: { agent: 'fullstack', status: 'idle', logs: [] } },
-  { id: 'security',      type: 'agent', position: { x: 80, y: 450 },  data: { agent: 'security', status: 'idle', logs: [] } },
-  { id: 'devops',        type: 'agent', position: { x: 80, y: 650 }, data: { agent: 'devops', status: 'idle', logs: [] } },
-  { id: 'ai_specialist', type: 'agent', position: { x: 80, y: 850 }, data: { agent: 'ai_specialist', status: 'idle', logs: [] } },
+  { id: 'fullstack',     type: 'agent', position: { x: 80, y: 190 }, data: { agent: 'fullstack', status: 'idle', logs: [] } },
+  { id: 'security',      type: 'agent', position: { x: 80, y: 330 }, data: { agent: 'security', status: 'idle', logs: [] } },
+  { id: 'devops',        type: 'agent', position: { x: 80, y: 470 }, data: { agent: 'devops', status: 'idle', logs: [] } },
+  { id: 'ai_specialist', type: 'agent', position: { x: 80, y: 610 }, data: { agent: 'ai_specialist', status: 'idle', logs: [] } },
 ];
 const initialEdges: Edge[] = [];
 
@@ -360,7 +360,7 @@ export default function CanvasApp() {
           proOptions={{ hideAttribution: true }}
         >
           <Background color="#1A1A24" gap={24} size={1.5} />
-          <Controls position="bottom-left" className="!bottom-24 !left-6 !bg-[#14141C] !border-white/5 !fill-white/70" />
+          
         </ReactFlow>
       </div>
 
