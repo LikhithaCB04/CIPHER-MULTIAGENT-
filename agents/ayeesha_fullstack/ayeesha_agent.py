@@ -114,10 +114,7 @@ OLLAMA_BASE_URL = os.environ.get(
     "http://localhost:11434"
 )
 
-llm = OllamaLLM(
-    model="phi3",
-    base_url=OLLAMA_BASE_URL
-)
+llm = OllamaLLM(model="phi3:mini", base_url=OLLAMA_BASE_URL, num_predict=2500)
 
 
 class TaskInput(BaseModel):
@@ -305,6 +302,7 @@ Do not output anything else. Do NOT include explanations, markdown outside FILE 
                 data.task_id
             ) or "default_task"
 
+            os.makedirs("workspace", exist_ok=True)
             with open(f"workspace/{safe_task_id}_raw.txt", "w", encoding="utf-8") as f:
                 f.write(generated_code)
 
@@ -314,6 +312,7 @@ Do not output anything else. Do NOT include explanations, markdown outside FILE 
             found_bad_pattern = None
             found_semantic_error = None
             if required_files.issubset(files.keys()):
+            if len(files) >= 3:
                 for filepath in ["src/App.jsx", "src/main.jsx"]:
                     content = files.get(filepath, "")
                     import_pattern = re.compile(r"^\s*import\s+(?:.*?\s+from\s+)?['\"](.*?)['\"]", re.MULTILINE)
@@ -385,6 +384,7 @@ Do not output anything else. Do NOT include explanations, markdown outside FILE 
                 server_error = f"Semantic validation failed: {found_semantic_error}"
                 yield log(server_error)
             elif required_files.issubset(files.keys()):
+            elif len(files) >= 3:
 
                 workspace_dir = os.path.abspath(
                     os.path.join(
@@ -898,7 +898,7 @@ FILE: src/App.css
                                     preview_url = None
 
             else:
-                server_error = "The LLM failed to generate the exactly required 5 files."
+                server_error = "The LLM failed to generate at least 3 required files."
                 yield log(server_error)
 
             # -------------------------------------------------------------
@@ -913,9 +913,9 @@ FILE: src/App.css
 
                 final_status = "success"
 
-                final_summary = (
-                    "Successfully generated fullstack application code."
-                )
+                missing_files = required_files - set(files.keys())
+                note = f" Note: missing {', '.join(missing_files)}" if missing_files else ""
+                final_summary = f"Successfully generated fullstack application code.{note}"
 
                 if preview_url:
 

@@ -5,7 +5,7 @@ import {
   Server, Shield, Database, Code, Cloud, Activity,
   CheckCircle2, XCircle, Loader2, Wifi, WifiOff, Trash2, X, FileText
 } from 'lucide-react';
-import AgentCanvas from './components/AgentCanvas';
+import CanvasApp from './CanvasApp';
 
 // ─── Agent Definitions ───────────────────────────────────────────────
 const AGENTS = [
@@ -517,7 +517,7 @@ export default function IDE() {
         {/* Canvas Area */}
         {(Object.keys(agentStates).length > 0) && (
           <div className="w-[450px] border-l border-[#1a1a1a] relative bg-[#050505] flex-shrink-0">
-            <AgentCanvas agentStates={agentStates} />
+            <CanvasApp />
           </div>
         )}
       </div>
