@@ -23,7 +23,7 @@ class GroqProxy:
         response = await asyncio.to_thread(self.invoke, prompt)
         yield response
 
-llm = GroqProxy(model_name="llama3-70b-8192", max_tokens=800)
+llm = GroqProxy(model_name="llama-3.1-70b-versatile", max_tokens=800)
 """
 test_agent.py — Run this to test ALL features of your agent BEFORE pushing to Git.
 
