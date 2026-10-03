@@ -313,7 +313,6 @@ Do not output anything else. Do NOT include explanations, markdown outside FILE 
             unsupported_import = None
             found_bad_pattern = None
             found_semantic_error = None
-            if required_files.issubset(files.keys()):
             if len(files) >= 3:
                 for filepath in ["src/App.jsx", "src/main.jsx"]:
                     content = files.get(filepath, "")
@@ -385,7 +384,6 @@ Do not output anything else. Do NOT include explanations, markdown outside FILE 
             elif found_semantic_error:
                 server_error = f"Semantic validation failed: {found_semantic_error}"
                 yield log(server_error)
-            elif required_files.issubset(files.keys()):
             elif len(files) >= 3:
 
                 workspace_dir = os.path.abspath(
