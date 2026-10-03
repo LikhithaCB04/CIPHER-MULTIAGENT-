@@ -128,7 +128,7 @@ const AgentNode = ({ data, id }: { data: NodeData; id: string }) => {
         <div className="flex-1 px-4 flex flex-col justify-center relative z-10">
           {data.status === 'idle' && (
             <div className="text-[11px] text-white/20 uppercase tracking-[0.2em] animate-pulse">
-              > SYSTEM_STANDBY
+              &gt; SYSTEM_STANDBY
             </div>
           )}
           {data.status === 'running' && (
@@ -142,7 +142,7 @@ const AgentNode = ({ data, id }: { data: NodeData; id: string }) => {
           )}
           {data.status === 'done' && (
             <div className="text-[11px] uppercase tracking-widest font-bold" style={{ color: meta.color }}>
-              > TASK_COMPLETED [OK]
+              &gt; TASK_COMPLETED [OK]
             </div>
           )}
         </div>
