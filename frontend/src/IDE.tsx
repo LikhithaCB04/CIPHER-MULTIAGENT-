@@ -486,7 +486,7 @@ export default function IDE() {
             <textarea value={input} onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
               placeholder="Describe a task for the agents… (Shift+Enter for newline)"
-              className="flex-1 bg-transparent outline-none text-sm text-white placeholder-[#333] font-mono resize-none min-h-[36px] max-h-28 py-1.5 px-1"
+              className="flex-1 bg-transparent outline-none text-sm !text-white placeholder-[#666] font-mono resize-none min-h-[36px] max-h-28 py-1.5 px-1"
               rows={1}
             />
             <button onClick={() => handleSend()} disabled={isLoading || !input.trim()}
