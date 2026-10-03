@@ -75,7 +75,7 @@ app.add_middleware(
  
 # --- LLM Setup ---
 # Uses mistral via Ollama. Change model="tinyllama" here if RAM is tight.
-llm = GroqProxy(model_name="llama-3.1-70b-versatile", max_tokens=800)
+llm = GroqProxy(model_name="openai/gpt-oss-120b", max_tokens=800)
  
 # =============================================================================
 # SHARED API CONTRACT — matches shared/api_contracts/contract.json exactly

@@ -1,5 +1,4 @@
 import os
-import glob
 
 files_to_check = []
 for root, _, files in os.walk('.'):

@@ -28,7 +28,7 @@ class GroqProxy:
         yield response
 
 
-llm = GroqProxy(model_name="llama-3.1-70b-versatile", max_tokens=800)
+llm = GroqProxy(model_name="openai/gpt-oss-120b", max_tokens=800)
 
 
 class TaskInput(BaseModel):

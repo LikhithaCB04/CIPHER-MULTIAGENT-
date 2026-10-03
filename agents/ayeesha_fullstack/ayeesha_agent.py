@@ -116,7 +116,7 @@ def parse_markdown_files(md_content):
 
     return {k: v for k, v in files.items() if k in allowlist}
 
-llm = GroqProxy(model_name="llama-3.1-70b-versatile", max_tokens=2500)
+llm = GroqProxy(model_name="openai/gpt-oss-120b", max_tokens=2500)
 
 
 class TaskInput(BaseModel):

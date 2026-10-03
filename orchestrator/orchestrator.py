@@ -39,7 +39,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-llm = GroqProxy(model_name="llama-3.1-8b-instant", max_tokens=300)
+llm = GroqProxy(model_name="openai/gpt-oss-20b", max_tokens=300)
 
 connected_clients = set()
 
