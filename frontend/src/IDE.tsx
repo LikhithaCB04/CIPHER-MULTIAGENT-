@@ -469,7 +469,7 @@ export default function IDE() {
                     ? 'bg-accent text-white rounded-tr-sm font-medium'
                     : msg.role === 'system'
                     ? 'bg-rose-950/40 border border-rose-500/20 text-rose-300 rounded-tl-sm font-mono text-xs'
-                    : 'bg-surface border border-surfaceBorder text-white rounded-tl-sm'
+                    : 'bg-surface border border-surfaceBorder text-textMuted rounded-tl-sm'
                 }`}>
                   {msg.content}
                   
