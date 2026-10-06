@@ -237,11 +237,14 @@ export default function IDE() {
       const contextData = attachments.length > 0 ? JSON.stringify({ files: attachments }) : '';
       setAttachments([]);
       
+
+      const sessionHistory = currentSession?.messages.map(m => ({ role: m.role, content: m.content })).slice(-5) || [];
       const res = await fetch(`${API}/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description: text, context: contextData }),
+        body: JSON.stringify({ description: text, context: contextData, history: sessionHistory }),
       });
+
       const data = await res.json();
 
       const reply: ChatMessage = {

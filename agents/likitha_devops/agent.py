@@ -32,6 +32,7 @@ class TaskInput(BaseModel):
     description: str
     context: str = ""
     priority: Optional[str] = "medium"
+    history: Optional[list] = None
 
 
 class TaskOutput(BaseModel):

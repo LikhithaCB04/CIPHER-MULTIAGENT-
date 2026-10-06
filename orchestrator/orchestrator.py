@@ -32,29 +32,23 @@ class LLMProxy:
         payload = {"contents": [{"parts":[{"text": prompt}]}]}
         try:
             resp = requests.post(self.url, json=payload, headers={"Content-Type": "application/json"})
-            data = resp.json()
-            if "candidates" in data and len(data["candidates"]) > 0:
-                return data["candidates"][0]["content"]["parts"][0]["text"]
-            
-            # Fallback to HF if Gemini quota is exhausted
-            if resp.status_code == 429 or "error" in data:
-                hf_key = os.environ.get("HF_API_KEY", "")
-                hf_res = requests.post("https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct/v1/chat/completions",
-                                       headers={"Authorization": f"Bearer {hf_key}"},
-                                       json={"model": "Qwen/Qwen2.5-72B-Instruct", "messages": [{"role": "user", "content": prompt}]})
-                if hf_res.status_code == 200:
-                    return hf_res.json()["choices"][0]["message"]["content"]
-                
-                # If that fails, try via huggingface_hub client if available
+            if resp.status_code != 429:
                 try:
-                    from huggingface_hub import InferenceClient
-                    client = InferenceClient(token=hf_key)
-                    res = client.chat_completion([{"role": "user", "content": prompt}], model="Qwen/Qwen2.5-72B-Instruct")
-                    return res.choices[0].message.content
-                except Exception:
-                    pass
+                    data = resp.json()
+                    if "candidates" in data and len(data["candidates"]) > 0:
+                        return data["candidates"][0]["content"]["parts"][0]["text"]
+                except: pass
+            
+            # Fallback to Cohere if Gemini quota is exhausted
+            cohere_key = os.environ.get("COHERE_API_KEY", "")
+            if cohere_key:
+                co_res = requests.post("https://api.cohere.com/v1/chat",
+                                       headers={"Authorization": f"Bearer {cohere_key}", "Content-Type": "application/json"},
+                                       json={"model": "command-a-03-2025", "message": prompt})
+                if co_res.status_code == 200:
+                    return co_res.json()["text"]
 
-            return f"Error: {data}"
+            return f"Error: Gemini quota exhausted and fallback failed. {resp.text}"
         except Exception as e:
             return f"Error: {str(e)}"
 
@@ -74,6 +68,7 @@ class Task(BaseModel):
     task_id: Optional[str] = None
     task_type: Optional[str] = "orchestrate"
     priority: Optional[str] = "medium"
+    history: Optional[list] = None
 
 
 # Map of agents to their docker-compose service name + the port each
@@ -219,23 +214,32 @@ async def run_task(task: Task):
 
     import httpx
     results = []
+    has_error = False
     
-        has_error = False
-        
-        # Clarification Check
-        if len(task.description) < 100 and "Clarify:" not in task.description:
-            clarify_prompt = f"The user asked to '{task.description}'. This is too brief. Ask 3 clarifying questions to gather requirements, and give a blank space or options for them to fill. Format beautifully in Markdown."
-            clarification = router_llm.invoke(clarify_prompt)
-            await broadcast({
-                "event": "agent_finished",
-                "agent": "ai_specialist",
+    # Clarification Check
+    if len(task.description) < 100 and "Clarify:" not in task.description and not task.history:
+        clarify_prompt = f"The user asked to '{task.description}'. This is too brief. Ask 3 clarifying questions to gather requirements, and give a blank space or options for them to fill. Format beautifully in Markdown."
+        clarification = llm.invoke(clarify_prompt)
+        await broadcast({
+            "event": "agent_finished",
+            "agent": "ai_specialist",
+            "task_id": task_id,
+            "result_summary": clarification,
+            "next_agent": None
+        })
+        return {
+            "status": "success",
+            "task_id": task_id,
+            "agents_used": ["ai_specialist"],
+            "results": [{
                 "task_id": task_id,
-                "result_summary": clarification,
-                "next_agent": None
-            })
-            return {"status": "clarification_needed"}
+                "status": "success",
+                "summary": "Please clarify your request:",
+                "result": clarification
+            }]
+        }
 
-        async with httpx.AsyncClient(timeout=900.0) as client:
+    async with httpx.AsyncClient(timeout=900.0) as client:
         for index, agent in enumerate(agents):
             await broadcast({"event": "agent_started", "agent": agent, "task_id": task_id})
             service = AGENT_SERVICES.get(agent, AGENT_SERVICES["ai_specialist"])
@@ -247,6 +251,7 @@ async def run_task(task: Task):
                     "description": task.description,
                     "context": task.context,
                     "priority": task.priority,
+                    "history": task.history,
                 }
                 
                 resp = await client.post(f"{url}/run", json=payload)
@@ -262,6 +267,7 @@ async def run_task(task: Task):
                         data = {"status": "error", "summary": "Empty output", "result": ""}
                 except Exception as ex:
                     data = {"status": "error", "summary": "JSON error", "result": str(ex) + " on text: " + text[:50]}
+                
                 summary = data.get("summary", "Agent completed successfully.")
                 if data.get("status") == "error":
                     has_error = True

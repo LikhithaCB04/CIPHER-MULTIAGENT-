@@ -33,29 +33,23 @@ class LLMProxy:
         payload = {"contents": [{"parts":[{"text": prompt}]}]}
         try:
             resp = requests.post(self.url, json=payload, headers={"Content-Type": "application/json"})
-            data = resp.json()
-            if "candidates" in data and len(data["candidates"]) > 0:
-                return data["candidates"][0]["content"]["parts"][0]["text"]
-            
-            # Fallback to HF if Gemini quota is exhausted
-            if resp.status_code == 429 or "error" in data:
-                hf_key = os.environ.get("HF_API_KEY", "")
-                hf_res = requests.post("https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct/v1/chat/completions",
-                                       headers={"Authorization": f"Bearer {hf_key}"},
-                                       json={"model": "Qwen/Qwen2.5-72B-Instruct", "messages": [{"role": "user", "content": prompt}]})
-                if hf_res.status_code == 200:
-                    return hf_res.json()["choices"][0]["message"]["content"]
-                
-                # If that fails, try via huggingface_hub client if available
+            if resp.status_code != 429:
                 try:
-                    from huggingface_hub import InferenceClient
-                    client = InferenceClient(token=hf_key)
-                    res = client.chat_completion([{"role": "user", "content": prompt}], model="Qwen/Qwen2.5-72B-Instruct")
-                    return res.choices[0].message.content
-                except Exception:
-                    pass
+                    data = resp.json()
+                    if "candidates" in data and len(data["candidates"]) > 0:
+                        return data["candidates"][0]["content"]["parts"][0]["text"]
+                except: pass
+            
+            # Fallback to Cohere if Gemini quota is exhausted
+            cohere_key = os.environ.get("COHERE_API_KEY", "")
+            if cohere_key:
+                co_res = requests.post("https://api.cohere.com/v1/chat",
+                                       headers={"Authorization": f"Bearer {cohere_key}", "Content-Type": "application/json"},
+                                       json={"model": "command-a-03-2025", "message": prompt})
+                if co_res.status_code == 200:
+                    return co_res.json()["text"]
 
-            return f"Error: {data}"
+            return f"Error: Gemini quota exhausted and fallback failed. {resp.text}"
         except Exception as e:
             return f"Error: {str(e)}"
 
@@ -68,6 +62,7 @@ class Task(BaseModel):
     description: str
     context: str = ""
     priority: Optional[str] = "medium"
+    history: Optional[list] = None
 
 class TaskOutput(BaseModel):
     task_id: str
