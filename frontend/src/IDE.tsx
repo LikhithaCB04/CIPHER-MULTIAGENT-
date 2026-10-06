@@ -4,7 +4,7 @@ import {
   Send, Paperclip, ChevronDown, Cpu, Plus, MessageSquare,
   Server, Shield, Database, Code, Cloud, Activity,
   CheckCircle2, XCircle, Loader2, Wifi, WifiOff, Trash2, X, FileText,
-  Copy, ThumbsUp, ThumbsDown
+  Copy, ThumbsUp, ThumbsDown, Mic, ArrowRight
 } from 'lucide-react';
 import CanvasApp from './CanvasApp';
 
@@ -46,6 +46,7 @@ interface ChatMessage {
   content: string;
   agents_used?: string[];
   results?: any[];
+  attachments?: {name: string, content: string}[];
 }
 
 interface ChatSession {
@@ -120,11 +121,50 @@ export default function IDE() {
   const [activeConfirmations, setActiveConfirmations] = useState<any[]>([]);
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const toggleRecording = () => {
+    if (isRecording && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    
+    recognition.onresult = (event: any) => {
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+      if (finalTranscript) {
+        setInput(prev => prev + (prev.endsWith(' ') || prev.length === 0 ? '' : ' ') + finalTranscript);
+      }
+    };
+
+    recognition.onerror = () => setIsRecording(false);
+    recognition.onend = () => setIsRecording(false);
+
+    recognition.start();
+    recognitionRef.current = recognition;
+    setIsRecording(true);
   };
 
   useEffect(() => {
@@ -233,7 +273,12 @@ export default function IDE() {
   const handleSend = async (text: string = input) => {
     const sid = currentSessionId;
 
-    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: text };
+    const userMsg: ChatMessage = { 
+      id: Date.now().toString(), 
+      role: 'user', 
+      content: text,
+      attachments: attachments.length > 0 ? [...attachments] : undefined
+    };
     const pending = [...currentSession.messages, userMsg];
     pushMessages(sid, pending);
     setInput('');
@@ -422,6 +467,24 @@ export default function IDE() {
                     : 'bg-[#111] border border-[#1f1f1f] text-[#ccc] rounded-tl-sm'
                 }`}>
                   {msg.content}
+                  
+                  {/* Display Attachments */}
+                  {msg.attachments && msg.attachments.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {msg.attachments.map((file, i) => (
+                        <div key={i} className="flex flex-col gap-1 max-w-[200px]">
+                          {file.content.startsWith('data:image/') ? (
+                            <img src={file.content} alt={file.name} className={`w-full rounded-lg border object-cover max-h-[150px] ${msg.role === 'user' ? 'border-gray-300' : 'border-[#333]'}`} />
+                          ) : (
+                            <div className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border ${msg.role === 'user' ? 'bg-gray-100 border-gray-200' : 'bg-[#111] border-[#222]'}`}>
+                              <FileText className={`w-4 h-4 ${msg.role === 'user' ? 'text-gray-500' : 'text-[#888]'}`} />
+                              <span className={`truncate text-xs ${msg.role === 'user' ? 'text-gray-700' : 'text-[#ccc]'}`}>{file.name}</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Agent result cards */}
@@ -530,21 +593,50 @@ export default function IDE() {
             </div>
           )}
           
-          <div className="flex items-end gap-2 border border-[#1f1f1f] rounded-2xl p-2 bg-[#0a0a0a] focus-within:border-[#333] focus-within:shadow-[0_0_20px_rgba(255,255,255,0.03)] transition-all">
+          <div className="flex items-end gap-2 border border-[#1f1f1f] rounded-2xl p-2 bg-[#0a0a0a] focus-within:border-[#333] focus-within:shadow-[0_0_20px_rgba(255,255,255,0.03)] transition-all relative">
+            {isRecording && <div className="absolute right-12 bottom-12 w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>}
+            
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple accept="image/*,text/*,application/json,text/markdown,.py,.js,.jsx,.ts,.tsx,.html,.css,.csv,.xlsx,.xls" />
-            <button onClick={() => fileInputRef.current?.click()} className="p-1.5 text-[#444] hover:text-[#888] transition-colors">
-              <Paperclip className="w-4 h-4" />
+            <button onClick={() => fileInputRef.current?.click()} className="p-2 text-[#444] hover:text-[#888] transition-colors" title="Attach files">
+              <Paperclip className="w-5 h-5" />
             </button>
+            
             <textarea value={input} onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
               placeholder="Describe a task for the agents… (Shift+Enter for newline)"
-              className="flex-1 bg-transparent outline-none text-sm !text-white placeholder-[#666] font-mono resize-none min-h-[36px] max-h-28 py-1.5 px-1"
+              className="flex-1 bg-transparent outline-none text-sm !text-white placeholder-[#666] font-mono resize-none min-h-[40px] max-h-32 py-2.5 px-1"
               rows={1}
             />
-            <button onClick={() => handleSend()} disabled={isLoading || !input.trim()}
-              className="p-2 bg-white rounded-xl text-black hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-[0_0_12px_rgba(255,255,255,0.4)] transition-all">
-              <Send className="w-4 h-4" />
-            </button>
+
+            <div className="flex items-center gap-2 mb-0.5">
+              <button 
+                onClick={toggleRecording} 
+                className={`flex items-center justify-center w-10 h-10 rounded-full transition-all ${
+                  isRecording 
+                    ? 'bg-red-500 hover:bg-red-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]' 
+                    : 'bg-transparent text-[#444] hover:text-[#888] hover:bg-[#1a1a1a]'
+                }`}
+                title={isRecording ? "Stop recording" : "Voice note"}
+              >
+                {isRecording ? (
+                  <div className="flex items-center gap-[3px] justify-center h-full">
+                    <div className="w-1 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-1 h-3.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-1 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                ) : (
+                  <Mic className="w-5 h-5" />
+                )}
+              </button>
+
+              <button 
+                onClick={() => handleSend()} 
+                disabled={isLoading || !input.trim()}
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-[#1a1a1a] text-[#888] hover:bg-[#2a2a2a] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              >
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
           </div>
           {!backendOnline && backendOnline !== null && (
             <p className="text-[10px] text-rose-400/70 font-mono mt-2 text-center">

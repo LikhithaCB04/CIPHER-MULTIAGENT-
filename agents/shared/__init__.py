@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env" if "agents" in __file__ else "../.env"))
+
 from fastapi import FastAPI
 import os
 

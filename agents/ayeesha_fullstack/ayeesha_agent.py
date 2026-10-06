@@ -1,4 +1,8 @@
 import os
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env" if "agents" in __file__ else "../.env"))
+
+import os
 import re
 import urllib.request
 import subprocess
@@ -16,7 +20,7 @@ import os
 import asyncio
 
 class LLMProxy:
-    def __init__(self, model_name="gemini-3.1-pro", max_tokens=2500):
+    def __init__(self, model_name="gemini-3.8-flash", max_tokens=2500):
         self.model_name = model_name
         self.api_key = os.environ.get("GEMINI_API_KEY", "")
         self.url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key}"

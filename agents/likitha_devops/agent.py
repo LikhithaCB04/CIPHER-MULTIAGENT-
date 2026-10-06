@@ -1,4 +1,8 @@
 import os
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env" if "agents" in __file__ else "../.env"))
+
+import os
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List, Optional
