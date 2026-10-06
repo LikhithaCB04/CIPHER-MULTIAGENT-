@@ -4,17 +4,17 @@ import {
   Send, Paperclip, ChevronDown, Cpu, Plus, MessageSquare,
   Server, Shield, Database, Code, Cloud, Activity,
   CheckCircle2, XCircle, Loader2, Wifi, WifiOff, Trash2, X, FileText,
-  Copy, ThumbsUp, ThumbsDown, Mic, ArrowRight
+  Copy, ThumbsUp, ThumbsDown, Mic, ArrowRight, User
 } from 'lucide-react';
 import CanvasApp from './CanvasApp';
 
 // ─── Agent Definitions ───────────────────────────────────────────────
 const AGENTS = [
-  { id: 'data_science',  name: 'Data Science',  desc: 'Python & ML pipelines',       icon: Database,   color: '#22d3ee', glow: 'rgba(34,211,238,0.25)' },
-  { id: 'fullstack',     name: 'Fullstack',      desc: 'React, Node, APIs',           icon: Code,       color: '#a78bfa', glow: 'rgba(167,139,250,0.25)' },
-  { id: 'security',      name: 'Security',       desc: 'Audits & Vulnerability scan', icon: Shield,     color: '#f87171', glow: 'rgba(248,113,113,0.25)' },
-  { id: 'devops',        name: 'DevOps',         desc: 'Docker & Cloud infra',        icon: Cloud,      color: '#4ade80', glow: 'rgba(74,222,128,0.25)' },
-  { id: 'ai_specialist', name: 'AI Specialist',  desc: 'LLM fine-tuning & prompts',  icon: Server,     color: '#fb923c', glow: 'rgba(251,146,60,0.25)'  },
+  { id: 'data_science',  name: 'Data Science',  desc: 'Python & ML pipelines',       icon: Database,   color: 'var(--accent-deepthi)', glow: 'rgba(176,141,87,0.25)' },
+  { id: 'fullstack',     name: 'Fullstack',      desc: 'React, Node, APIs',           icon: Code,       color: 'var(--accent-ayeesha)', glow: 'rgba(107,105,101,0.25)' },
+  { id: 'security',      name: 'Security',       desc: 'Audits & Vulnerability scan', icon: Shield,     color: 'var(--accent-mahima)', glow: 'rgba(87,62,46,0.25)' },
+  { id: 'devops',        name: 'DevOps',         desc: 'Docker & Cloud infra',        icon: Cloud,      color: 'var(--accent-likitha)', glow: 'rgba(141,123,104,0.25)' },
+  { id: 'ai_specialist', name: 'AI Specialist',  desc: 'LLM fine-tuning & prompts',  icon: Server,     color: 'var(--accent-ai-specialist)', glow: 'rgba(201,169,126,0.25)'  },
 ];
 
 const MODELS = [
@@ -23,12 +23,12 @@ const MODELS = [
 ];
 
 const TEMPLATES = [
-  { emoji: '🔐', title: 'Auth System',   prompt: 'Build a complete login and registration system with JWT authentication, password hashing, and protected routes.' },
-  { emoji: '📝', title: 'Todo App',      prompt: 'Build a full stack todo app with React frontend and Node backend where users can add, edit, delete and filter tasks.' },
-  { emoji: '🛒', title: 'E-commerce',   prompt: 'Build an e-commerce product listing page with shopping cart, product search, and checkout flow.' },
-  { emoji: '📊', title: 'Dashboard',    prompt: 'Build an admin analytics dashboard with charts for user stats, revenue, and activity metrics.' },
-  { emoji: '🔍', title: 'Security Audit', prompt: 'Perform a security audit on a web application: check for XSS, SQL injection, CSRF vulnerabilities and suggest fixes.' },
-  { emoji: '🤖', title: 'AI Chatbot',   prompt: 'Build an AI-powered chatbot with streaming responses, conversation history, and context management.' },
+  { emoji: '🔐', title: 'Auth System',   prompt: 'Build a complete login and registration system with JWT authentication, password hashing, and protected routes.', color: 'var(--accent-mahima)', glow: 'rgba(87,62,46,0.1)' },
+  { emoji: '📝', title: 'Todo App',      prompt: 'Build a full stack todo app with React frontend and Node backend where users can add, edit, delete and filter tasks.', color: 'var(--accent-ayeesha)', glow: 'rgba(107,105,101,0.1)' },
+  { emoji: '🛒', title: 'E-commerce',   prompt: 'Build an e-commerce product listing page with shopping cart, product search, and checkout flow.', color: 'var(--accent-likitha)', glow: 'rgba(141,123,104,0.1)' },
+  { emoji: '📊', title: 'Dashboard',    prompt: 'Build an admin analytics dashboard with charts for user stats, revenue, and activity metrics.', color: 'var(--accent-deepthi)', glow: 'rgba(176,141,87,0.1)' },
+  { emoji: '🔍', title: 'Security Audit', prompt: 'Perform a security audit on a web application: check for XSS, SQL injection, CSRF vulnerabilities and suggest fixes.', color: 'var(--accent-mahima)', glow: 'rgba(87,62,46,0.1)' },
+  { emoji: '🤖', title: 'AI Chatbot',   prompt: 'Build an AI-powered chatbot with streaming responses, conversation history, and context management.', color: 'var(--accent-ai-specialist)', glow: 'rgba(201,169,126,0.1)' },
 ];
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -325,21 +325,21 @@ export default function IDE() {
 
   // ─────────────────────────────────────────────────────────────────
   return (
-    <div className="h-screen w-full flex bg-[#050505] text-white overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="h-screen w-full flex bg-surface text-textMain overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
       
       {activeConfirmations.length > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#161b22] border border-[#30363d] p-6 rounded-xl shadow-2xl max-w-lg w-full">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-4">
+          <div className="bg-surface border border-surfaceBorder p-6 rounded-xl shadow-2xl max-w-lg w-full">
+            <h2 className="text-xl font-bold text-textMain flex items-center gap-2 mb-4">
               <Shield className="w-6 h-6 text-red-500" /> Security Confirmation Required
             </h2>
-            <div className="bg-[#0d1117] p-4 rounded-lg border border-[#30363d] mb-6">
-              <p className="text-sm text-[#8b949e] mb-1">Agent:</p>
-              <p className="font-mono text-[#c9d1d9] mb-4">{activeConfirmations[0].agent}</p>
-              <p className="text-sm text-[#8b949e] mb-1">Tool:</p>
-              <p className="font-mono text-[#c9d1d9] mb-4">{activeConfirmations[0].tool}</p>
-              <p className="text-sm text-[#8b949e] mb-1">Action:</p>
-              <pre className="font-mono text-[#c9d1d9] text-sm whitespace-pre-wrap">{activeConfirmations[0].action}</pre>
+            <div className="bg-surface p-4 rounded-lg border border-surfaceBorder mb-6">
+              <p className="text-sm text-textMuted mb-1">Agent:</p>
+              <p className="font-mono text-textMuted mb-4">{activeConfirmations[0].agent}</p>
+              <p className="text-sm text-textMuted mb-1">Tool:</p>
+              <p className="font-mono text-textMuted mb-4">{activeConfirmations[0].tool}</p>
+              <p className="text-sm text-textMuted mb-1">Action:</p>
+              <pre className="font-mono text-textMuted text-sm whitespace-pre-wrap">{activeConfirmations[0].action}</pre>
             </div>
             <div className="flex gap-4">
               <button 
@@ -350,7 +350,7 @@ export default function IDE() {
               </button>
               <button 
                 onClick={() => handleConfirm(activeConfirmations[0].task_id, 'approved')}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                className="flex-1 px-4 py-2 bg-green-600 text-textMain rounded-lg hover:bg-green-700 transition-colors"
               >
                 Approve
               </button>
@@ -360,35 +360,40 @@ export default function IDE() {
       )}
 
       {/* ── Narrow icon rail ─────────────────────────────────────── */}
-      <div className="w-12 flex flex-col items-center py-5 gap-6 border-r border-[#1a1a1a] bg-[#080808]">
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-black">C</div>
-        <div className="flex flex-col gap-4 mt-2">
+      <div className="w-12 flex flex-col items-center py-5 border-r border-surfaceBorder bg-surface">
+        <div className="w-7 h-7 rounded-lg bg-surfaceBorder text-white flex items-center justify-center text-xs font-black mb-6">C</div>
+        <div className="flex flex-col gap-4">
           {[MessageSquare, Activity, Cpu].map((Icon, i) => (
-            <Icon key={i} className={`w-4 h-4 cursor-pointer transition-colors ${i === 0 ? 'text-white' : 'text-[#444] hover:text-[#888]'}`} />
+            <Icon key={i} className={`w-4 h-4 cursor-pointer transition-colors ${i === 0 ? 'text-textMain' : 'text-textMuted hover:text-textMuted'}`} />
           ))}
+        </div>
+        <div className="mt-auto pt-4">
+          <div className="w-8 h-8 rounded-full bg-surfaceBorder border border-surfaceBorder flex items-center justify-center text-textMuted cursor-pointer hover:text-white transition-colors" title="User Profile">
+            <User className="w-4 h-4" />
+          </div>
         </div>
       </div>
 
       {/* ── Session sidebar ───────────────────────────────────────── */}
-      <div className="w-56 flex flex-col border-r border-[#1a1a1a] bg-[#070707]">
-        <div className="px-4 py-3 flex items-center justify-between border-b border-[#1a1a1a]">
-          <span className="text-[10px] font-bold tracking-[0.2em] text-[#555] uppercase">Projects</span>
+      <div className="w-56 flex flex-col border-r border-surfaceBorder bg-surface">
+        <div className="px-4 py-3 flex items-center justify-between border-b border-surfaceBorder">
+          <span className="text-[10px] font-bold tracking-[0.2em] text-white uppercase">Projects</span>
           <button onClick={() => {
             const url = prompt("Enter local path or GitHub URL to import project:");
             if(url) alert("Project imported: " + url + "\n(Agent context updated)");
-          }} className="text-[#555] hover:text-white transition-colors" title="Import Project">
+          }} className="text-textMuted hover:text-textMain transition-colors" title="Import Project">
             <Plus className="w-3.5 h-3.5" />
           </button>
         </div>
-        <div className="px-3 py-2 border-b border-[#1a1a1a]">
-          <div className="text-xs text-[#888] p-2 hover:bg-[#111] rounded cursor-pointer border border-transparent hover:border-[#333] transition-colors flex items-center gap-2">
+        <div className="px-3 py-2 border-b border-surfaceBorder">
+          <div className="text-xs text-textMuted p-2 hover:bg-surface rounded cursor-pointer border border-transparent hover:border-surfaceBorder transition-colors flex items-center gap-2">
             <Database className="w-3 h-3" /> Default Workspace
           </div>
         </div>
 
-        <div className="px-4 py-3 flex items-center justify-between border-b border-[#1a1a1a]">
-          <span className="text-[10px] font-bold tracking-[0.2em] text-[#555] uppercase">Sessions</span>
-          <button onClick={createNewSession} className="text-[#555] hover:text-white transition-colors">
+        <div className="px-4 py-3 flex items-center justify-between border-b border-surfaceBorder">
+          <span className="text-[10px] font-bold tracking-[0.2em] text-white uppercase">Sessions</span>
+          <button onClick={createNewSession} className="text-textMuted hover:text-textMain transition-colors">
             <Plus className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -402,13 +407,13 @@ export default function IDE() {
                 title={`Updated ${new Date(s.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })}`}
                 className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all text-xs font-mono min-w-0 ${
                   s.id === currentSessionId
-                    ? 'bg-[#1a1a1a] text-white'
-                    : 'text-[#555] hover:text-[#aaa] hover:bg-[#0f0f0f]'
+                    ? 'bg-surface text-textMain'
+                    : 'text-textMuted hover:text-textMuted hover:bg-surface'
                 }`}
               >
                 <span className="truncate flex-1 min-w-0 block">{s.title}</span>
                 <button onClick={e => { e.stopPropagation(); deleteSession(s.id); }}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 text-[#555] hover:text-rose-400">
+                  className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 text-textMuted hover:text-rose-400">
                   <Trash2 className="w-3 h-3" />
                 </button>
               </motion.div>
@@ -418,32 +423,32 @@ export default function IDE() {
       </div>
 
       {/* ── Chat panel (now in middle) ───────────────────────────────────────────────── */}
-      <div className="flex-1 min-w-[400px] flex flex-col bg-[#070707] border-r border-[#1a1a1a]">
+      <div className="flex-1 min-w-[400px] flex flex-col bg-surface border-r border-surfaceBorder">
 
         {/* Chat header + model selector */}
-        <div className="h-12 border-b border-[#1a1a1a] flex items-center justify-between px-4">
+        <div className="h-12 border-b border-surfaceBorder flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse shadow-[0_0_6px_rgba(59,130,246,0.8)]" />
-            <span className="text-[10px] font-bold tracking-[0.2em] text-[#666] uppercase">Cipher Chat</span>
+            <span className="text-[10px] font-bold tracking-[0.2em] text-textMuted uppercase">Cipher Chat</span>
           </div>
 
           {/* Model dropdown */}
           <div className="relative">
             <button onClick={() => setShowModelDropdown(v => !v)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#1f1f1f] bg-[#0d0d0d] hover:bg-[#151515] transition-colors text-xs font-mono">
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-surfaceBorder bg-surface hover:bg-surface transition-colors text-xs font-mono">
               <activeModel.icon className="w-3.5 h-3.5" />
-              <span className="text-[#aaa]">{activeModel.name}</span>
-              <ChevronDown className="w-3 h-3 text-[#444]" />
+              <span className="text-textMuted">{activeModel.name}</span>
+              <ChevronDown className="w-3 h-3 text-textMuted" />
             </button>
             <AnimatePresence>
               {showModelDropdown && (
                 <motion.div initial={{ opacity: 0, y: 6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 6, scale: 0.97 }}
-                  className="absolute right-0 top-9 w-64 rounded-xl border border-[#1f1f1f] bg-[#0a0a0a] shadow-2xl overflow-hidden z-50 py-1.5">
+                  className="absolute right-0 top-9 w-64 rounded-xl border border-surfaceBorder bg-surface shadow-2xl overflow-hidden z-50 py-1.5">
                   {MODELS.map(m => (
                     <div key={m.id} onClick={() => { setActiveModelId(m.id); setShowModelDropdown(false); }}
-                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#151515] cursor-pointer transition-colors">
-                      <m.icon className="w-3.5 h-3.5 text-[#666]" />
-                      <span className="text-xs font-mono text-[#aaa]">{m.name}</span>
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-surface cursor-pointer transition-colors">
+                      <m.icon className="w-3.5 h-3.5 text-textMuted" />
+                      <span className="text-xs font-mono text-textMuted">{m.name}</span>
                       {activeModelId === m.id && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500" />}
                     </div>
                   ))}
@@ -461,10 +466,10 @@ export default function IDE() {
                 className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                 <div className={`max-w-[88%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                   msg.role === 'user'
-                    ? 'bg-white text-black rounded-tr-sm font-medium'
+                    ? 'bg-accent text-white rounded-tr-sm font-medium'
                     : msg.role === 'system'
                     ? 'bg-rose-950/40 border border-rose-500/20 text-rose-300 rounded-tl-sm font-mono text-xs'
-                    : 'bg-[#111] border border-[#1f1f1f] text-[#ccc] rounded-tl-sm'
+                    : 'bg-surface border border-surfaceBorder text-white rounded-tl-sm'
                 }`}>
                   {msg.content}
                   
@@ -474,11 +479,11 @@ export default function IDE() {
                       {msg.attachments.map((file, i) => (
                         <div key={i} className="flex flex-col gap-1 max-w-[200px]">
                           {file.content.startsWith('data:image/') ? (
-                            <img src={file.content} alt={file.name} className={`w-full rounded-lg border object-cover max-h-[150px] ${msg.role === 'user' ? 'border-gray-300' : 'border-[#333]'}`} />
+                            <img src={file.content} alt={file.name} className={`w-full rounded-lg border object-cover max-h-[150px] ${msg.role === 'user' ? 'border-gray-300' : 'border-surfaceBorder'}`} />
                           ) : (
-                            <div className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border ${msg.role === 'user' ? 'bg-gray-100 border-gray-200' : 'bg-[#111] border-[#222]'}`}>
-                              <FileText className={`w-4 h-4 ${msg.role === 'user' ? 'text-gray-500' : 'text-[#888]'}`} />
-                              <span className={`truncate text-xs ${msg.role === 'user' ? 'text-gray-700' : 'text-[#ccc]'}`}>{file.name}</span>
+                            <div className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border ${msg.role === 'user' ? 'bg-gray-100 border-gray-200' : 'bg-surface border-surfaceBorder'}`}>
+                              <FileText className={`w-4 h-4 ${msg.role === 'user' ? 'text-gray-500' : 'text-textMuted'}`} />
+                              <span className={`truncate text-xs ${msg.role === 'user' ? 'text-gray-700' : 'text-textMuted'}`}>{file.name}</span>
                             </div>
                           )}
                         </div>
@@ -490,8 +495,8 @@ export default function IDE() {
                 {/* Agent result cards */}
                 {msg.agents_used && msg.agents_used.length > 0 && (
                   <div className="mt-3 w-full space-y-2 max-w-[96%]">
-                    <div className="text-[10px] text-[#444] font-mono uppercase tracking-wider flex items-center gap-2">
-                      <span className="flex-1 h-px bg-[#1a1a1a]" /> agents executed <span className="flex-1 h-px bg-[#1a1a1a]" />
+                    <div className="text-[10px] text-textMuted font-mono uppercase tracking-wider flex items-center gap-2">
+                      <span className="flex-1 h-px bg-surface" /> agents executed <span className="flex-1 h-px bg-surface" />
                     </div>
                     {msg.results?.map((res, idx) => {
                       const agentId = msg.agents_used![idx] || 'ai_specialist';
@@ -499,17 +504,17 @@ export default function IDE() {
                       const Icon = meta.icon;
                       return (
                         <motion.div key={idx} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.08 }}
-                          className="p-3 rounded-xl border text-xs font-mono bg-[#0a0a0a]"
-                          style={{ borderColor: meta.color + '40' }}>
+                          className="p-3 rounded-xl border text-xs font-mono"
+                          style={{ borderColor: meta.color, backgroundColor: meta.glow, color: 'var(--textMain)' }}>
                           <div className="flex items-center gap-2 mb-2 font-bold uppercase tracking-wider" style={{ color: meta.color }}>
                             <Icon className="w-3 h-3" />{meta.name}
                           </div>
                           {res.error
                             ? <div className="text-rose-400 break-words">{res.error}</div>
-                            : <div className="text-[#999] space-y-3">
+                            : <div className="space-y-3 opacity-90">
                                 <div>{res.summary || 'Agent completed successfully.'}</div>
                                 {res.result && (
-                                  <pre className="bg-[#000] p-3 rounded-lg overflow-x-auto text-[10px] text-emerald-400 border border-[#1a1a1a] whitespace-pre-wrap break-words">
+                                  <pre className="bg-surface p-3 rounded-lg overflow-x-auto text-[10px] text-emerald-400 border border-surfaceBorder whitespace-pre-wrap break-words">
                                     <code>{res.result}</code>
                                   </pre>
                                 )}
@@ -523,8 +528,8 @@ export default function IDE() {
 
                 {/* Action buttons (Copy, Like, Dislike) */}
                 {msg.role !== 'user' && (
-                  <div className="flex items-center gap-1 mt-1.5 ml-2 text-[#555]">
-                    <button onClick={() => handleCopy(msg.id, msg.content)} className="hover:text-white transition-colors p-1.5 rounded border border-transparent hover:border-[#333] hover:bg-[#1a1a1a] cursor-pointer" title={copiedId === msg.id ? "Copied!" : "Copy"}>
+                  <div className="flex items-center gap-1 mt-1.5 ml-2 text-textMuted">
+                    <button onClick={() => handleCopy(msg.id, msg.content)} className="hover:text-textMain transition-colors p-1.5 rounded border border-transparent hover:border-surfaceBorder hover:bg-surface cursor-pointer" title={copiedId === msg.id ? "Copied!" : "Copy"}>
                       {copiedId === msg.id ? <CheckCircle2 className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                     <button className="hover:text-emerald-400 transition-colors p-1.5 rounded border border-transparent hover:border-emerald-900 hover:bg-emerald-950/30 cursor-pointer" title="Good response">
@@ -538,8 +543,8 @@ export default function IDE() {
                 
                 {/* User message action buttons */}
                 {msg.role === 'user' && (
-                  <div className="flex items-center gap-1 mt-1.5 mr-2 text-[#555]">
-                    <button onClick={() => handleCopy(msg.id, msg.content)} className="hover:text-white transition-colors p-1.5 rounded border border-transparent hover:border-[#333] hover:bg-[#1a1a1a] cursor-pointer" title={copiedId === msg.id ? "Copied!" : "Copy"}>
+                  <div className="flex items-center gap-1 mt-1.5 mr-2 text-textMuted">
+                    <button onClick={() => handleCopy(msg.id, msg.content)} className="hover:text-textMain transition-colors p-1.5 rounded border border-transparent hover:border-surfaceBorder hover:bg-surface cursor-pointer" title={copiedId === msg.id ? "Copied!" : "Copy"}>
                       {copiedId === msg.id ? <CheckCircle2 className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
@@ -549,14 +554,14 @@ export default function IDE() {
           </AnimatePresence>
 
           {isLoading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-2 px-4 py-3 w-fit rounded-2xl rounded-tl-sm bg-[#111] border border-[#1f1f1f]">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-2 px-4 py-3 w-fit rounded-2xl rounded-tl-sm bg-surface border border-surfaceBorder">
               <div className="flex items-center gap-2">
                 {['bg-blue-500','bg-purple-500','bg-cyan-500'].map((c, i) => (
                   <span key={i} className={`w-1.5 h-1.5 rounded-full ${c} animate-bounce`}
                     style={{ animationDelay: `${i * 0.1}s`, boxShadow: `0 0 6px currentColor` }} />
                 ))}
               </div>
-              <span className="text-[10px] text-[#666] font-mono">Generating response... (This may take several minutes)</span>
+              <span className="text-[10px] text-textMuted font-mono">Generating response... (This may take several minutes)</span>
             </motion.div>
           )}
           <div ref={messagesEndRef} />
@@ -568,24 +573,25 @@ export default function IDE() {
             {TEMPLATES.map((t, i) => (
               <motion.button key={i} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                 onClick={() => handleSend(t.prompt)}
-                className="flex-shrink-0 text-left w-36 p-2.5 rounded-xl border border-[#1a1a1a] bg-[#0d0d0d] hover:bg-[#131313] hover:border-[#333] transition-all group">
+                style={{ borderColor: t.color, backgroundColor: t.glow }}
+                className="flex-shrink-0 text-left w-36 p-2.5 rounded-xl border transition-all group">
                 <div className="text-base mb-1">{t.emoji}</div>
-                <div className="text-[11px] font-semibold text-[#888] group-hover:text-white transition-colors">{t.title}</div>
+                <div className="text-[11px] font-semibold text-textMuted group-hover:text-textMain transition-colors" style={{ color: t.color }}>{t.title}</div>
               </motion.button>
             ))}
           </div>
         )}
 
         {/* Input */}
-        <div className="p-4 border-t border-[#1a1a1a]">
+        <div className="p-4 border-t border-surfaceBorder">
           {/* Attachments preview */}
           {attachments.length > 0 && (
             <div className="flex gap-2 mb-2 flex-wrap">
               {attachments.map((file, i) => (
-                <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1a1a1a] rounded-lg text-xs text-white border border-[#333]">
-                  <FileText className="w-3 h-3 text-[#888]" />
+                <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-surface rounded-lg text-xs text-textMain border border-surfaceBorder">
+                  <FileText className="w-3 h-3 text-textMuted" />
                   <span className="max-w-[150px] truncate">{file.name}</span>
-                  <button onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))} className="ml-1 text-[#888] hover:text-white">
+                  <button onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))} className="ml-1 text-textMuted hover:text-textMain">
                     <X className="w-3 h-3" />
                   </button>
                 </div>
@@ -593,18 +599,18 @@ export default function IDE() {
             </div>
           )}
           
-          <div className="flex items-end gap-2 border border-[#1f1f1f] rounded-2xl p-2 bg-[#0a0a0a] focus-within:border-[#333] focus-within:shadow-[0_0_20px_rgba(255,255,255,0.03)] transition-all relative">
+          <div className="flex items-end gap-2 border border-surfaceBorder rounded-2xl p-2 bg-surface focus-within:border-surfaceBorder focus-within:shadow-[0_0_20px_rgba(255,255,255,0.03)] transition-all relative">
             {isRecording && <div className="absolute right-12 bottom-12 w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>}
             
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple accept="image/*,text/*,application/json,text/markdown,.py,.js,.jsx,.ts,.tsx,.html,.css,.csv,.xlsx,.xls" />
-            <button onClick={() => fileInputRef.current?.click()} className="p-2 text-[#444] hover:text-[#888] transition-colors" title="Attach files">
+            <button onClick={() => fileInputRef.current?.click()} className="p-2 text-textMuted hover:text-textMuted transition-colors" title="Attach files">
               <Paperclip className="w-5 h-5" />
             </button>
             
             <textarea value={input} onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
               placeholder="Describe a task for the agents… (Shift+Enter for newline)"
-              className="flex-1 bg-transparent outline-none text-sm !text-white placeholder-[#666] font-mono resize-none min-h-[40px] max-h-32 py-2.5 px-1"
+              className="flex-1 bg-transparent outline-none text-sm !text-textMain placeholder-textMuted font-mono resize-none min-h-[40px] max-h-32 py-2.5 px-1"
               rows={1}
             />
 
@@ -613,16 +619,16 @@ export default function IDE() {
                 onClick={toggleRecording} 
                 className={`flex items-center justify-center w-10 h-10 rounded-full transition-all ${
                   isRecording 
-                    ? 'bg-red-500 hover:bg-red-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]' 
-                    : 'bg-transparent text-[#444] hover:text-[#888] hover:bg-[#1a1a1a]'
+                    ? 'bg-red-500 hover:bg-red-600 text-textMain shadow-[0_0_15px_rgba(239,68,68,0.4)]' 
+                    : 'bg-transparent text-textMuted hover:text-textMuted hover:bg-surface'
                 }`}
                 title={isRecording ? "Stop recording" : "Voice note"}
               >
                 {isRecording ? (
                   <div className="flex items-center gap-[3px] justify-center h-full">
-                    <div className="w-1 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-1 h-3.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <div className="w-1 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <div className="w-1 h-2 bg-textMain rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-1 h-3.5 bg-textMain rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-1 h-2 bg-textMain rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                   </div>
                 ) : (
                   <Mic className="w-5 h-5" />
@@ -632,7 +638,7 @@ export default function IDE() {
               <button 
                 onClick={() => handleSend()} 
                 disabled={isLoading || !input.trim()}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-[#1a1a1a] text-[#888] hover:bg-[#2a2a2a] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-surface text-textMuted hover:bg-surface hover:text-textMain disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
                 <ArrowRight className="w-5 h-5" />
               </button>
@@ -646,13 +652,13 @@ export default function IDE() {
         </div>
       </div>
 
-      <div className="w-[450px] shrink-0 flex flex-col bg-[#050505]">
+      <div className="w-[450px] shrink-0 flex flex-col bg-surface">
         {/* Header */}
-        <div className="h-12 border-b border-[#1a1a1a] flex items-center justify-between px-5 bg-[#080808]">
-          <span className="text-[10px] font-bold tracking-[0.25em] text-[#555] uppercase">Live Agent Canvas</span>
+        <div className="h-12 border-b border-surfaceBorder flex items-center justify-between px-5 bg-surface">
+          <span className="text-[10px] font-bold tracking-[0.25em] text-textMuted uppercase">Live Agent Canvas</span>
           {/* Backend status indicator */}
           <div className={`flex items-center gap-2 text-[10px] font-mono px-3 py-1 rounded-full border ${
-            backendOnline === null ? 'border-[#333] text-[#555]' :
+            backendOnline === null ? 'border-surfaceBorder text-textMuted' :
             backendOnline ? 'border-emerald-500/30 text-emerald-400 bg-emerald-400/5' : 'border-rose-500/30 text-rose-400 bg-rose-400/5'
           }`}>
             {backendOnline === null ? <Loader2 className="w-3 h-3 animate-spin" /> :
@@ -663,7 +669,7 @@ export default function IDE() {
 
         {/* Canvas Area */}
         {(Object.keys(agentStates).length > 0) && (
-          <div className="flex-1 w-full border-t border-[#1a1a1a] relative bg-[#050505] overflow-hidden">
+          <div className="flex-1 w-full border-t border-surfaceBorder relative bg-surface overflow-hidden">
             <CanvasApp />
           </div>
         )}

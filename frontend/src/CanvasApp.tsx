@@ -70,16 +70,16 @@ const useCanvasStore = create<NodeState>((set, get) => ({
 
 // ─── AGENT METADATA ──────────────────────────────────────────────
 const agentMeta: Record<string, { color: string; label: string; num: string }> = {
-  data_science:  { color: '#00F0FF', label: 'DATA SCIENTIST',   num: '01' }, 
-  fullstack:     { color: '#B026FF', label: 'FULLSTACK DEV',    num: '02' }, 
-  security:      { color: '#FF003C', label: 'SECURITY AUDIT',   num: '03' }, 
-  devops:        { color: '#39FF14', label: 'DEVOPS / CI-CD',   num: '04' }, 
-  ai_specialist: { color: '#FFB800', label: 'AI SPECIALIST',    num: '05' }, 
+  data_science:  { color: 'var(--accent-deepthi)', label: 'DATA SCIENTIST',   num: '01' }, 
+  fullstack:     { color: 'var(--accent-ayeesha)', label: 'FULLSTACK DEV',    num: '02' }, 
+  security:      { color: 'var(--accent-mahima)', label: 'SECURITY AUDIT',   num: '03' }, 
+  devops:        { color: 'var(--accent-likitha)', label: 'DEVOPS / CI-CD',   num: '04' }, 
+  ai_specialist: { color: 'var(--accent-ai-specialist)', label: 'AI SPECIALIST',    num: '05' }, 
 };
 
 // ─── CUSTOM NODES ────────────────────────────────────────────────
 const AgentNode = ({ data, id }: { data: NodeData; id: string }) => {
-  const meta = agentMeta[id] || { color: '#ffffff', label: id, num: '00' };
+  const meta = agentMeta[id] || { color: 'var(--accent-deepthi)', label: id, num: '00' };
   
   const isRunning = data.status === 'running';
   const isDone = data.status === 'done';
@@ -115,24 +115,24 @@ const AgentNode = ({ data, id }: { data: NodeData; id: string }) => {
                  <span className="relative inline-flex h-2 w-2 rounded-full" style={{ backgroundColor: meta.color }}></span>
                </div>
              ) : (
-               <div className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.2)]" style={{ background: isDone ? meta.color : '#333' }} />
+               <div className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.2)]" style={{ background: isDone ? meta.color : 'var(--surfaceBorder)' }} />
              )}
-             <span className="text-[12px] font-bold tracking-[0.2em] uppercase" style={{ color: isRunning || isDone ? meta.color : '#888', textShadow: isRunning ? `0 0 10px ${meta.color}` : 'none' }}>
+             <span className="text-[12px] font-bold tracking-[0.2em] uppercase" style={{ color: isRunning || isDone ? meta.color : 'var(--textMuted)', textShadow: isRunning ? `0 0 10px ${meta.color}` : 'none' }}>
                SYS.{meta.label}
              </span>
           </div>
-          <span className="text-[10px] text-white/30 font-bold tracking-widest">[{meta.num}]</span>
+          <span className="text-[10px] text-textMain/30 font-bold tracking-widest">[{meta.num}]</span>
         </div>
         
         {/* Body */}
         <div className="flex-1 px-4 flex flex-col justify-center relative z-10">
           {data.status === 'idle' && (
-            <div className="text-[11px] text-white/20 uppercase tracking-[0.2em] animate-pulse">
+            <div className="text-[11px] text-textMain/20 uppercase tracking-[0.2em] animate-pulse">
               &gt; SYSTEM_STANDBY
             </div>
           )}
           {data.status === 'running' && (
-            <div className="text-[11px] text-white/90 uppercase tracking-wider flex items-center gap-3">
+            <div className="text-[11px] text-textMain/90 uppercase tracking-wider flex items-center gap-3">
                <svg className="animate-spin h-4 w-4" style={{ color: meta.color }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -184,7 +184,7 @@ const AnimatedEdge = ({
       <path
         id={id}
         style={{
-          stroke: isRunning ? '#3B82F6' : isDone ? '#444' : '#222',
+          stroke: isRunning ? 'var(--accent-deepthi)' : isDone ? 'var(--surfaceBorder)' : 'var(--surface)',
           strokeWidth: isRunning ? 2 : 1,
           animation: isRunning ? 'dash 1s linear infinite' : 'none',
           strokeDasharray: isRunning ? '8, 8' : 'none',
@@ -327,7 +327,7 @@ export default function CanvasApp() {
   const nodeList = useMemo(() => nodes, [nodes]);
 
   return (
-    <div className="h-screen w-full font-sans flex flex-col relative overflow-hidden bg-[#0A0A0F]">
+    <div className="h-screen w-full font-sans flex flex-col relative overflow-hidden bg-surface">
       
       {/* Animated gradient/wave layer behind dot-grid */}
       <div 
@@ -359,7 +359,7 @@ export default function CanvasApp() {
           fitView
           proOptions={{ hideAttribution: true }}
         >
-          <Background color="#1A1A24" gap={24} size={1.5} />
+          <Background color="var(--surfaceBorder)" gap={24} size={1.5} />
           
         </ReactFlow>
       </div>

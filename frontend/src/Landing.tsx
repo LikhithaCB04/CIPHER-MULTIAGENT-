@@ -94,7 +94,7 @@ const Landing = () => {
       <motion.div 
         animate={{ x: mousePos.x - 200, y: mousePos.y - 200 }}
         transition={{ type: "tween", ease: "linear", duration: 0 }}
-        className="absolute w-[400px] h-[400px] bg-white rounded-full opacity-5 blur-[100px] pointer-events-none z-0"
+        className="absolute w-[400px] h-[400px] bg-textMain rounded-full opacity-5 blur-[100px] pointer-events-none z-0"
       />
 
       <AnimatePresence>
@@ -103,7 +103,7 @@ const Landing = () => {
             key="loader"
             exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
             transition={{ duration: 0.8 }}
-            className="z-10 text-white font-mono text-sm tracking-[0.5em] uppercase"
+            className="z-10 text-textMain font-mono text-sm tracking-[0.5em] uppercase"
           >
             <motion.span animate={{ opacity: [0.2, 1, 0.2] }} transition={{ duration: 1.5, repeat: Infinity }}>
               Decrypting Core...
@@ -122,7 +122,7 @@ const Landing = () => {
                 initial={{ y: "100%" }}
                 animate={{ y: 0 }}
                 transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-                className="text-[120px] leading-none font-bold tracking-tighter text-white"
+                className="text-[120px] leading-none font-bold tracking-tighter text-textMain"
               >
                 CIPHER.
               </motion.h1>
@@ -132,7 +132,7 @@ const Landing = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => navigate('/ide')}
-              className="glow-border px-8 py-4 bg-transparent border border-white/20 text-white font-mono text-xs uppercase tracking-[0.2em] flex items-center space-x-4 hover:bg-white hover:text-black transition-all duration-300"
+              className="glow-border px-8 py-4 bg-transparent border border-white/20 text-textMain font-mono text-xs uppercase tracking-[0.2em] flex items-center space-x-4 hover:bg-textMain hover:text-background transition-all duration-300"
             >
               <span>Initialize Workspace</span>
               <span className="w-1.5 h-1.5 bg-current rounded-full animate-pulse" />

@@ -7,12 +7,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#050505',
-        surface: '#0a0a0a',
-        surfaceBorder: '#1a1a1a',
-        textMain: '#ffffff',
-        textMuted: '#888888',
-        accent: '#ffffff'
+        background: '#0D0D0D', // ONYX BLACK
+        surface: '#1C1C1E', // CHARCOAL
+        surfaceBorder: '#3A2F2A', // ESPRESSO
+        textMain: '#F5F5F5', // Soft white for contrast
+        textMuted: '#6B6965', // SLATE GREY
+        accent: '#B08D57' // ANTIQUE GOLD
       },
       fontFamily: {
         mono: ['"JetBrains Mono"', 'monospace'],

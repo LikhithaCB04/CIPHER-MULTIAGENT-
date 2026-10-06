@@ -19,18 +19,18 @@ const AgentNode = ({ data }: any) => {
   const isRunning = data.status === 'running';
   
   return (
-    <div className={`w-80 rounded-xl overflow-hidden bg-[#0a0a0a]/90 backdrop-blur-md border ${isRunning ? 'border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.3)]' : 'border-[#222]'} transition-all duration-300`}>
+    <div className={`w-80 rounded-xl overflow-hidden bg-surface/90 backdrop-blur-md border ${isRunning ? 'border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.3)]' : 'border-surfaceBorder'} transition-all duration-300`}>
       <Handle type="target" position={Position.Left} className="w-2 h-2 !bg-indigo-500" />
       
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 bg-[#111] border-b border-[#222]">
+      <div className="flex items-center justify-between px-3 py-2 bg-surface border-b border-surfaceBorder">
         <div className="flex items-center gap-2">
           <Icon className="w-4 h-4 text-indigo-400" />
-          <span className="text-xs font-semibold text-white font-mono">{data.name}</span>
+          <span className="text-xs font-semibold text-textMain font-mono">{data.name}</span>
         </div>
         <div className="flex items-center gap-2">
           {isRunning && <Loader2 className="w-3 h-3 text-indigo-400 animate-spin" />}
-          <span className={`text-[10px] uppercase font-bold tracking-wider ${isRunning ? 'text-indigo-400' : 'text-[#555]'}`}>
+          <span className={`text-[10px] uppercase font-bold tracking-wider ${isRunning ? 'text-indigo-400' : 'text-textMuted'}`}>
             {data.status}
           </span>
         </div>
@@ -41,7 +41,7 @@ const AgentNode = ({ data }: any) => {
         {data.log ? (
           <div className="whitespace-pre-wrap">{data.log}</div>
         ) : (
-          <div className="text-[#444] italic">Waiting for instructions...</div>
+          <div className="text-textMuted italic">Waiting for instructions...</div>
         )}
       </div>
       
@@ -107,7 +107,7 @@ export default function AgentCanvas({ agentStates }: AgentCanvasProps) {
   }, [agentStates]);
 
   return (
-    <div className="w-full h-full bg-[#030303]">
+    <div className="w-full h-full bg-surface">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -116,7 +116,7 @@ export default function AgentCanvas({ agentStates }: AgentCanvasProps) {
         defaultEdgeOptions={{ type: 'smoothstep' }}
       >
         <Background color="#1a1a1a" gap={16} />
-        <Controls className="!bg-[#111] !border-[#222] !fill-white" />
+        <Controls className="!bg-surface !border-surfaceBorder !fill-white" />
       </ReactFlow>
     </div>
   );
