@@ -1,6 +1,6 @@
 # Modelfile — Deepthi's Data Science Agent
 # Place this file in: agents/deepthi_data/Modelfile
-# Run: ollama create deepthi-agent -f Modelfile
+# Run: groq create deepthi-agent -f Modelfile
 # Then change model="mistral" to model="deepthi-agent" in deepthi_agent.py
 
 FROM mistral

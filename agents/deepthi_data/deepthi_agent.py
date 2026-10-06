@@ -46,36 +46,26 @@ from groq import Groq
 import os
 import asyncio
 
-class GroqProxy:
-    def __init__(self, model_name, max_tokens):
-        self.client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-        self.model = model_name
-        self.max_tokens = max_tokens
+class LLMProxy:
+    def __init__(self, model_name="command-a-03-2025", max_tokens=2500):
+        self.model_name = model_name
+        self.api_key = os.environ.get("COHERE_API_KEY", "")
+        self.url = "https://api.cohere.ai/v1/chat"
         
-    def invoke(self, prompt):
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=self.max_tokens
-        )
-        return response.choices[0].message.content
-        
-    async def astream(self, prompt):
-        response = await asyncio.to_thread(self.invoke, prompt)
-        yield response
+    def invoke(self, prompt: str) -> str:
+        import requests
+        payload = {"message": prompt, "model": self.model_name}
+        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        try:
+            resp = requests.post(self.url, json=payload, headers=headers)
+            data = resp.json()
+            if "text" in data:
+                return data["text"]
+            return f"Error: {data}"
+        except Exception as e:
+            return f"Error: {str(e)}"
 
- 
-# Allow cross-origin requests so dashboard can call this agent directly
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
- 
-# --- LLM Setup ---
-# Uses mistral via Ollama. Change model="tinyllama" here if RAM is tight.
-llm = GroqProxy(model_name="openai/gpt-oss-120b", max_tokens=800)
+llm = LLMProxy(model_name=os.environ.get("GROQ_AGENT_MODEL", "openai/gpt-oss-120b"), max_tokens=800)
  
 # =============================================================================
 # SHARED API CONTRACT — matches shared/api_contracts/contract.json exactly
@@ -806,12 +796,17 @@ def run_task(task: TaskInput):
                     if "base64," in file_data:
                         b64_str = file_data.split("base64,")[1]
                         raw_bytes = base64.b64decode(b64_str)
-                        if file_name.endswith(".csv"):
-                            df = pd.read_csv(io.BytesIO(raw_bytes))
-                            data_source = "user_uploaded_csv"
+                        import os
+                        os.makedirs('/app/workspace', exist_ok=True)
+                        file_path = os.path.join('/app/workspace', file_name)
+                        with open(file_path, 'wb') as bf:
+                            bf.write(raw_bytes)
+                        if file_name.endswith('.csv'):
+                            df = pd.read_csv(file_path)
+                            data_source = 'user_uploaded_csv'
                         else:
-                            df = pd.read_excel(io.BytesIO(raw_bytes), engine="openpyxl")
-                            data_source = "user_uploaded_excel"
+                            df = pd.read_excel(file_path, engine='openpyxl')
+                            data_source = 'user_uploaded_excel'
                     else:
                         # plain text csv
                         df = pd.read_csv(io.StringIO(file_data))

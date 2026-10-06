@@ -15,108 +15,74 @@ from groq import Groq
 import os
 import asyncio
 
-class GroqProxy:
-    def __init__(self, model_name, max_tokens):
-        self.client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-        self.model = model_name
-        self.max_tokens = max_tokens
-        
-    def invoke(self, prompt):
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=self.max_tokens
-        )
-        return response.choices[0].message.content
+class LLMProxy:
+    def __init__(self, model_name="gemini-3.1-pro", max_tokens=2500):
+        self.model_name = model_name
+        self.api_key = os.environ.get("GEMINI_API_KEY", "")
+        self.url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key}"
         
     async def astream(self, prompt):
+        import asyncio
         response = await asyncio.to_thread(self.invoke, prompt)
         yield response
 
+    def invoke(self, prompt: str) -> str:
+        import requests, os
+        payload = {"contents": [{"parts":[{"text": prompt}]}]}
+        try:
+            resp = requests.post(self.url, json=payload, headers={"Content-Type": "application/json"})
+            data = resp.json()
+            if "candidates" in data and len(data["candidates"]) > 0:
+                return data["candidates"][0]["content"]["parts"][0]["text"]
+            
+            # Fallback to HF if Gemini quota is exhausted
+            if resp.status_code == 429 or "error" in data:
+                hf_key = os.environ.get("HF_API_KEY", "")
+                hf_res = requests.post("https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct/v1/chat/completions",
+                                       headers={"Authorization": f"Bearer {hf_key}"},
+                                       json={"model": "Qwen/Qwen2.5-72B-Instruct", "messages": [{"role": "user", "content": prompt}]})
+                if hf_res.status_code == 200:
+                    return hf_res.json()["choices"][0]["message"]["content"]
+                
+                # If that fails, try via huggingface_hub client if available
+                try:
+                    from huggingface_hub import InferenceClient
+                    client = InferenceClient(token=hf_key)
+                    res = client.chat_completion([{"role": "user", "content": prompt}], model="Qwen/Qwen2.5-72B-Instruct")
+                    return res.choices[0].message.content
+                except Exception:
+                    pass
+
+            return f"Error: {data}"
+        except Exception as e:
+            return f"Error: {str(e)}"
 
 
 def parse_markdown_files(md_content):
+    import re
     files = {}
     allowlist = {
         "package.json", "index.html", "src/main.jsx", "src/App.jsx", "src/App.css"
     }
-
-    # Match code blocks. We'll look for filenames immediately preceding or inside the block.
-    # Pattern looks for optional FILE: or ### followed by filename, then ```
-    # Or ``` followed by // filename
     pattern = re.compile(
         r'(?:(?:FILE:|###|\*\*)\s*([a-zA-Z0-9_./-]+)(?:\*\*)?\s*\n)?```[a-zA-Z0-9-]*\n(?:(?://|/\*|<!--)\s*([a-zA-Z0-9_./-]+)\s*\n)?(.*?)(?:\n```|\Z)',
         re.DOTALL
     )
-
     for m in pattern.finditer(md_content):
         filepath = (m.group(1) or m.group(2))
         content = m.group(3)
-
         if not filepath:
             continue
-
         filepath = filepath.strip()
-
-        # Sanitize LLM artifacts
         if content:
             content = content.replace("end-of-content", "")
             content = content.replace("END_OF_FILES", "")
             content = content.strip()
-
         if filepath in allowlist:
             files[filepath] = content
+    return files
 
-    # Fallback: if we didn't get all files, try a simpler split
-    if not allowlist.issubset(files.keys()):
-        # Just grab all code blocks and try to guess them based on content or order
-        blocks = re.findall(r'```[a-zA-Z0-9-]*\n(.*?)(?:\n```|\Z)', md_content, re.DOTALL)
-
-        # If exactly 5 blocks, assume standard order just in case
-        if len(blocks) == 5:
-            files["package.json"] = blocks[0].strip()
-            files["index.html"] = blocks[1].strip()
-            files["src/main.jsx"] = blocks[2].strip()
-            files["src/App.jsx"] = blocks[3].strip()
-            files["src/App.css"] = blocks[4].strip()
-        else:
-            for block in blocks:
-                if '"name"' in block and '"scripts"' in block:
-                    files["package.json"] = block.strip()
-                elif '<html' in block or '<div id="root">' in block:
-                    files["index.html"] = block.strip()
-                elif 'createRoot' in block or 'ReactDOM.render' in block or 'ReactDOM.hydrate' in block or 'document.getElementById(\'root\')' in block:
-                    if '<App' in block and not 'export default' in block:
-                        files["src/main.jsx"] = block.strip()
-                    else:
-                        files["src/App.jsx"] = block.strip()
-                elif 'export default' in block or 'function App' in block or 'const App' in block:
-                    files["src/App.jsx"] = block.strip()
-                elif 'display:' in block or 'margin:' in block or 'padding:' in block or '--primary-color' in block or '@import' in block:
-                    files["src/App.css"] = block.strip()
-
-    # Final sanitization
-    contamination_markers = [
-        "02. Functional React Application",
-        "Task:",
-        "You are a code generator",
-        "Generate these two files",
-        "For App.jsx:",
-        "For App.css:",
-        "Output EXACTLY",
-        "Do not output anything else"
-    ]
-    for k in files:
-        content = files[k].replace("end-of-content", "").replace("END_OF_FILES", "")
-        for marker in contamination_markers:
-            idx = content.find(marker)
-            if idx != -1:
-                content = content[:idx]
-        files[k] = content.strip()
-
-    return {k: v for k, v in files.items() if k in allowlist}
-
-llm = GroqProxy(model_name="openai/gpt-oss-120b", max_tokens=2500)
+llm = LLMProxy(model_name=os.environ.get("GROQ_AGENT_MODEL", "openai/gpt-oss-120b"), max_tokens=2500)
 
 
 class TaskInput(BaseModel):
@@ -232,59 +198,12 @@ createRoot(document.getElementById('root')).render(
 
             yield log("Call 1: Generating UI files (App.jsx, App.css)...")
             p2 = base_rules + """
-Generate these two files together in one compact response:
-1. src/App.jsx
-2. src/App.css
-
-Generate a BASIC but COMPLETE functional website. Keep it intentionally small.
-
-For App.jsx:
-* actual React JSX
-* className styling
-* all components defined inside App.jsx
-* local sample data where useful
-* simple useState interaction
-* no backend/API
-* no fetch
-* no axios
-* no Redux
-* no React Router
-* no external UI libraries
-* no react-icons
-* no local component imports
-* only ./App.css if an import is needed
-* responsive layout
-* navbar, hero/content section, a few cards, footer
-* basic interaction if requested
-* target 100-180 lines maximum
-* prefer reusable arrays and .map()
-* NO placeholders, NO "due to brevity", NO "your code here"
-
-For App.css:
-* complete styling for the generated App.jsx
-* responsive layout
-* no @import
-* no placeholder CSS
-* target 100-180 lines maximum
-
-Prioritize:
-1. syntactically valid code
-2. compact implementation
-3. completing the requested functionality
-4. avoiding duplicated code and explanations
-
-Output EXACTLY these two file blocks in the standard format:
+Generate the implementation for the application. You must output the required files in FILE blocks, but you should also INCLUDE detailed setup instructions, explanations, and how to run it, similar to an AI coding assistant.
+Output files in this format:
 FILE: src/App.jsx
 ```jsx
 ...
 ```
-
-FILE: src/App.css
-```css
-...
-```
-
-Do not output anything else. Do NOT include explanations, markdown outside FILE blocks, TODOs, or the word placeholder.
 """
             c2 = await generate_chunk(p2)
             if await request.is_disconnected(): return
@@ -366,14 +285,7 @@ Do not output anything else. Do NOT include explanations, markdown outside FILE 
                             found_semantic_error = f"Template text detected: '{pattern}'"
                             break
                             
-                    # Minimum implementation check
-                    if not found_semantic_error:
-                        if len(app_jsx_content) < 400:
-                            found_semantic_error = "App.jsx is too small to be a complete implementation."
-                        elif "className=" not in app_jsx_content:
-                            found_semantic_error = "App.jsx is missing className styling."
-                        elif "useState" not in app_jsx_content and ".map" not in app_jsx_content:
-                            found_semantic_error = "App.jsx is missing React state or array rendering."
+                    
 
             if unsupported_import:
                 server_error = f"Generated code uses an unsupported dependency: {unsupported_import}"

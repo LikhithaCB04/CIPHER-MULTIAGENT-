@@ -17,25 +17,49 @@ from groq import Groq
 import os
 import asyncio
 
-class GroqProxy:
-    def __init__(self, model_name, max_tokens):
-        self.client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-        self.model = model_name
-        self.max_tokens = max_tokens
-        
-    def invoke(self, prompt):
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=self.max_tokens
-        )
-        return response.choices[0].message.content
+class LLMProxy:
+    def __init__(self, model_name="gemini-3.1-pro", max_tokens=2500):
+        self.model_name = model_name
+        self.api_key = os.environ.get("GEMINI_API_KEY", "")
+        self.url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key}"
         
     async def astream(self, prompt):
+        import asyncio
         response = await asyncio.to_thread(self.invoke, prompt)
         yield response
 
-llm = GroqProxy(model_name="openai/gpt-oss-120b", max_tokens=800)
+    def invoke(self, prompt: str) -> str:
+        import requests, os
+        payload = {"contents": [{"parts":[{"text": prompt}]}]}
+        try:
+            resp = requests.post(self.url, json=payload, headers={"Content-Type": "application/json"})
+            data = resp.json()
+            if "candidates" in data and len(data["candidates"]) > 0:
+                return data["candidates"][0]["content"]["parts"][0]["text"]
+            
+            # Fallback to HF if Gemini quota is exhausted
+            if resp.status_code == 429 or "error" in data:
+                hf_key = os.environ.get("HF_API_KEY", "")
+                hf_res = requests.post("https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct/v1/chat/completions",
+                                       headers={"Authorization": f"Bearer {hf_key}"},
+                                       json={"model": "Qwen/Qwen2.5-72B-Instruct", "messages": [{"role": "user", "content": prompt}]})
+                if hf_res.status_code == 200:
+                    return hf_res.json()["choices"][0]["message"]["content"]
+                
+                # If that fails, try via huggingface_hub client if available
+                try:
+                    from huggingface_hub import InferenceClient
+                    client = InferenceClient(token=hf_key)
+                    res = client.chat_completion([{"role": "user", "content": prompt}], model="Qwen/Qwen2.5-72B-Instruct")
+                    return res.choices[0].message.content
+                except Exception:
+                    pass
+
+            return f"Error: {data}"
+        except Exception as e:
+            return f"Error: {str(e)}"
+
+llm = LLMProxy(model_name=os.environ.get("GROQ_AGENT_MODEL", "openai/gpt-oss-120b"), max_tokens=800)
 
 
 class Task(BaseModel):
@@ -193,7 +217,7 @@ def process_task(data: Task):
     
         # Handle attached images via context
         if "data:image" in data.context:
-            yield log("Detected image in context, routing to Llava vision model...")
+            yield log("Detected image in context, routing to Vision vision model...")
             import requests
             # Find the base64 string
             start_idx = data.context.find("data:image")
@@ -207,7 +231,7 @@ def process_task(data: Task):
             try:
                 resp = requests.post(
                     json={
-                        "model": "llava",
+                        "model": "vision",
                         "prompt": data.description or "Describe this image.",
                         "images": [b64_data],
                         "stream": False
@@ -216,17 +240,17 @@ def process_task(data: Task):
                 )
                 if resp.status_code == 200:
                     answer = resp.json().get("response", "")
-                    yield json.dumps({"type": "task_output", "output": {"task_id": data.task_id, "status": "success", "result": answer, "summary": "Analyzed uploaded image with Llava.", "logs": logs}}) + "\n"
+                    yield json.dumps({"type": "task_output", "output": {"task_id": data.task_id, "status": "success", "result": answer, "summary": "Analyzed uploaded image with Vision.", "logs": logs}}) + "\n"
                     return
                 else:
                     err_msg = resp.text
-                    if "model 'llava' not found" in err_msg.lower():
-                        yield json.dumps({"type": "task_output", "output": {"task_id": data.task_id, "status": "error", "result": "Llava model is not installed. Please run `ollama pull llava` in your terminal to enable image support.", "summary": "Missing Llava vision model.", "logs": logs}}) + "\n"
+                    if "model 'vision' not found" in err_msg.lower():
+                        yield json.dumps({"type": "task_output", "output": {"task_id": data.task_id, "status": "error", "result": "Vision model is not installed. Please run `groq pull vision` in your terminal to enable image support.", "summary": "Missing Vision vision model.", "logs": logs}}) + "\n"
                         return
-                    yield json.dumps({"type": "task_output", "output": {"task_id": data.task_id, "status": "error", "result": f"Ollama API Error: {err_msg}", "summary": "Failed to analyze image.", "logs": logs}}) + "\n"
+                    yield json.dumps({"type": "task_output", "output": {"task_id": data.task_id, "status": "error", "result": f"Groq API Error: {err_msg}", "summary": "Failed to analyze image.", "logs": logs}}) + "\n"
                     return
             except Exception as e:
-                yield json.dumps({"type": "task_output", "output": {"task_id": data.task_id, "status": "error", "result": f"Error contacting Ollama: {str(e)}", "summary": "Vision model failed.", "logs": logs}}) + "\n"
+                yield json.dumps({"type": "task_output", "output": {"task_id": data.task_id, "status": "error", "result": f"Error contacting Groq: {str(e)}", "summary": "Vision model failed.", "logs": logs}}) + "\n"
                 return
     
         yield json.dumps({"type": "task_output", "output": {

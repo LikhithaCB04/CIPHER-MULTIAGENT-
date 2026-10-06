@@ -28,3 +28,6 @@ requests==2.32.3
 
 groq
 # bust cache 2
+
+openpyxl
+

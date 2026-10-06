@@ -23,7 +23,7 @@ class GroqProxy:
         response = await asyncio.to_thread(self.invoke, prompt)
         yield response
 
-llm = GroqProxy(model_name="openai/gpt-oss-120b", max_tokens=800)
+llm = GroqProxy(model_name=os.environ.get("GROQ_AGENT_MODEL", "openai/gpt-oss-120b"), max_tokens=800)
 """
 test_agent.py — Run this to test ALL features of your agent BEFORE pushing to Git.
 

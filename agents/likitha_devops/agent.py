@@ -9,26 +9,21 @@ from groq import Groq
 import os
 import asyncio
 
-class GroqProxy:
-    def __init__(self, model_name, max_tokens):
-        self.client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-        self.model = model_name
-        self.max_tokens = max_tokens
+class LLMProxy:
+    def __init__(self, model_name="Qwen/Qwen2.5-72B-Instruct", max_tokens=2500):
+        self.model_name = model_name
+        self.api_key = os.environ.get("HF_API_KEY", "")
+        from huggingface_hub import InferenceClient
+        self.client = InferenceClient(token=self.api_key)
         
-    def invoke(self, prompt):
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=self.max_tokens
-        )
-        return response.choices[0].message.content
-        
-    async def astream(self, prompt):
-        response = await asyncio.to_thread(self.invoke, prompt)
-        yield response
+    def invoke(self, prompt: str) -> str:
+        try:
+            res = self.client.chat_completion([{"role": "user", "content": prompt}], model=self.model_name)
+            return res.choices[0].message.content
+        except Exception as e:
+            return f"Error: {str(e)}"
 
-
-llm = GroqProxy(model_name="openai/gpt-oss-120b", max_tokens=800)
+llm = LLMProxy(model_name=os.environ.get("GROQ_AGENT_MODEL", "openai/gpt-oss-120b"), max_tokens=800)
 
 
 class TaskInput(BaseModel):

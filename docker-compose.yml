@@ -4,6 +4,8 @@ services:
       context: ./orchestrator
       dockerfile: Dockerfile
     container_name: master-orchestrator
+    volumes:
+      - ./workspace:/app/workspace
     ports:
     - 8000:8000
     depends_on:
@@ -33,6 +35,8 @@ services:
       context: ./agents/ai_specialist
       dockerfile: Dockerfile
     container_name: ai-specialist-agent
+    volumes:
+      - ./workspace:/app/workspace
     ports:
     - 8005:8005
     healthcheck:
@@ -53,6 +57,8 @@ services:
       context: ./agents/deepthi_data
       dockerfile: Dockerfile
     container_name: deepthi-agent
+    volumes:
+      - ./workspace:/app/workspace
     ports:
     - 8001:8001
     healthcheck:
@@ -73,6 +79,8 @@ services:
       context: ./agents/likitha_devops
       dockerfile: Dockerfile
     container_name: likitha-agent
+    volumes:
+      - ./workspace:/app/workspace
     ports:
     - 8004:8004
     healthcheck:
@@ -93,6 +101,8 @@ services:
       context: ./agents/mahima_security
       dockerfile: Dockerfile
     container_name: mahima-agent
+    volumes:
+      - ./workspace:/app/workspace
     ports:
     - 8003:8003
     healthcheck:
@@ -113,6 +123,8 @@ services:
       context: ./agents/ayeesha_fullstack
       dockerfile: Dockerfile
     container_name: ayesha-agent
+    volumes:
+      - ./workspace:/app/workspace
     ports:
     - 8002:8002
     healthcheck:

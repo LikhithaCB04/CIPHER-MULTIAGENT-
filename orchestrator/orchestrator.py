@@ -5,41 +5,60 @@ from typing import Optional
 import asyncio
 import requests, json, os, uuid
 
+
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 from groq import Groq
 import os
 import asyncio
 
-class GroqProxy:
-    def __init__(self, model_name, max_tokens):
-        self.client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-        self.model = model_name
-        self.max_tokens = max_tokens
+class LLMProxy:
+    def __init__(self, model_name="gemini-3.1-pro", max_tokens=2500):
+        self.model_name = model_name
+        self.api_key = os.environ.get("GEMINI_API_KEY", "")
+        self.url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key}"
         
-    def invoke(self, prompt):
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=self.max_tokens
-        )
-        return response.choices[0].message.content
-        
-    async def astream(self, prompt):
-        response = await asyncio.to_thread(self.invoke, prompt)
-        yield response
+    def invoke(self, prompt: str) -> str:
+        import requests, os
+        payload = {"contents": [{"parts":[{"text": prompt}]}]}
+        try:
+            resp = requests.post(self.url, json=payload, headers={"Content-Type": "application/json"})
+            data = resp.json()
+            if "candidates" in data and len(data["candidates"]) > 0:
+                return data["candidates"][0]["content"]["parts"][0]["text"]
+            
+            # Fallback to HF if Gemini quota is exhausted
+            if resp.status_code == 429 or "error" in data:
+                hf_key = os.environ.get("HF_API_KEY", "")
+                hf_res = requests.post("https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct/v1/chat/completions",
+                                       headers={"Authorization": f"Bearer {hf_key}"},
+                                       json={"model": "Qwen/Qwen2.5-72B-Instruct", "messages": [{"role": "user", "content": prompt}]})
+                if hf_res.status_code == 200:
+                    return hf_res.json()["choices"][0]["message"]["content"]
+                
+                # If that fails, try via huggingface_hub client if available
+                try:
+                    from huggingface_hub import InferenceClient
+                    client = InferenceClient(token=hf_key)
+                    res = client.chat_completion([{"role": "user", "content": prompt}], model="Qwen/Qwen2.5-72B-Instruct")
+                    return res.choices[0].message.content
+                except Exception:
+                    pass
 
+            return f"Error: {data}"
+        except Exception as e:
+            return f"Error: {str(e)}"
 
-# Enable CORS for the React Frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-llm = GroqProxy(model_name="openai/gpt-oss-20b", max_tokens=300)
+llm = LLMProxy(model_name=os.environ.get("GROQ_ROUTER_MODEL", "openai/gpt-oss-20b"), max_tokens=300)
 
 connected_clients = set()
 
@@ -122,7 +141,7 @@ async def chat_with_orchestrator(request: ChatRequest):
     try:
         response = llm.invoke(prompt)
     except Exception as e:
-        response = f"[MOCK RESPONSE]: Backend connected successfully! However, your local Ollama 'llama3' model is not running. Start Ollama to chat properly. (Error: {str(e)[:50]})"
+        response = f"[MOCK RESPONSE]: Backend connected successfully! However, your Groq model failed to run. (Error: {str(e)[:50]})"
 
     return {"response": response}
 
@@ -160,22 +179,30 @@ async def run_task(task: Task):
     task_id = task.task_id or f"task-{uuid.uuid4().hex[:8]}"
     await broadcast({"event": "task_received", "task_id": task_id, "description": task.description})
 
-    prompt = f'''
-    You are a task router for a multi-agent AI system.
-    Given this task: {task.description}
-    If the task mentions a git URL, github, or repository, route it to ai_specialist.
-    If the task is a general greeting, small talk, or doesn't clearly require data analysis, code generation, security review, or deployment work, default to fullstack.
-    Otherwise choose one or more agents from: data_science, fullstack, security, devops.
-    Do NOT route to ai_specialist unless a repository is explicitly mentioned.
-    CRITICAL: Return ONLY a valid JSON array of strings, no markdown, no backticks, no explanation. Example: ["fullstack"] or ["data_science", "devops"]
-    '''
+    # Strict file routing
+    is_data_file = False
+    if task.context:
+        low_ctx = task.context.lower()
+        if "csv" in low_ctx or "spreadsheetml" in low_ctx or "excel" in low_ctx or ".xls" in low_ctx:
+            is_data_file = True
 
     try:
-        if "github.com" in task.description.lower() or "http://" in task.description.lower() or "https://" in task.description.lower():
+        if is_data_file:
+            agents = ["data_science"]
+        elif "github.com" in task.description.lower() or "http://" in task.description.lower() or "https://" in task.description.lower():
             agents = ["ai_specialist"]
         elif "data:image" in task.context.lower():
             agents = ["ai_specialist"]
         else:
+            prompt = f'''
+            You are a task router for a multi-agent AI system.
+            Given this task: {task.description}
+            If the task mentions a git URL, github, or repository, route it to ai_specialist.
+            If the task is a general greeting, small talk, or doesn't clearly require data analysis, code generation, security review, or deployment work, default to fullstack.
+            Otherwise choose one or more agents from: data_science, fullstack, security, devops.
+            Do NOT route to ai_specialist unless a repository is explicitly mentioned.
+            CRITICAL: Return ONLY a valid JSON array of strings, no markdown, no backticks, no explanation. Example: ["fullstack"] or ["data_science", "devops"]
+            '''
             agents_raw = await asyncio.to_thread(llm.invoke, prompt)
             if "[" in agents_raw and "]" in agents_raw:
                 json_str = agents_raw[agents_raw.find("["):agents_raw.rfind("]") + 1]
@@ -184,7 +211,7 @@ async def run_task(task: Task):
                     agents = []
             else:
                 agents = choose_agents(task.description)
-                
+            
             if not agents:
                 agents = choose_agents(task.description)
     except Exception:
@@ -193,7 +220,22 @@ async def run_task(task: Task):
     import httpx
     results = []
     
-    async with httpx.AsyncClient(timeout=900.0) as client:
+        has_error = False
+        
+        # Clarification Check
+        if len(task.description) < 100 and "Clarify:" not in task.description:
+            clarify_prompt = f"The user asked to '{task.description}'. This is too brief. Ask 3 clarifying questions to gather requirements, and give a blank space or options for them to fill. Format beautifully in Markdown."
+            clarification = router_llm.invoke(clarify_prompt)
+            await broadcast({
+                "event": "agent_finished",
+                "agent": "ai_specialist",
+                "task_id": task_id,
+                "result_summary": clarification,
+                "next_agent": None
+            })
+            return {"status": "clarification_needed"}
+
+        async with httpx.AsyncClient(timeout=900.0) as client:
         for index, agent in enumerate(agents):
             await broadcast({"event": "agent_started", "agent": agent, "task_id": task_id})
             service = AGENT_SERVICES.get(agent, AGENT_SERVICES["ai_specialist"])
@@ -207,41 +249,28 @@ async def run_task(task: Task):
                     "priority": task.priority,
                 }
                 
-                final_response_data = None
+                resp = await client.post(f"{url}/run", json=payload)
+                resp.raise_for_status()
+                text = resp.text.strip()
+                import json
+                try:
+                    lines = [line for line in text.split('\n') if line.strip()]
+                    if lines:
+                        parsed = json.loads(lines[-1])
+                        data = parsed.get("output", parsed) if isinstance(parsed, dict) else parsed
+                    else:
+                        data = {"status": "error", "summary": "Empty output", "result": ""}
+                except Exception as ex:
+                    data = {"status": "error", "summary": "JSON error", "result": str(ex) + " on text: " + text[:50]}
+                summary = data.get("summary", "Agent completed successfully.")
+                if data.get("status") == "error":
+                    has_error = True
                 
-                async with client.stream("POST", f"{url}/run", json=payload) as response:
-                    response.raise_for_status()
-                    async for line in response.aiter_lines():
-                        if not line.strip():
-                            continue
-                        try:
-                            data = json.loads(line)
-                            if data.get("type") == "agent_thought":
-                                await broadcast({
-                                    "event": "agent_thought",
-                                    "agent": agent,
-                                    "task_id": task_id,
-                                    "text": data.get("text", "")
-                                })
-                            elif data.get("type") == "confirmation_required":
-                                await broadcast({
-                                    "event": "confirmation_required",
-                                    "agent": agent,
-                                    "task_id": data.get("task_id"),
-                                    "tool": data.get("tool"),
-                                    "action": data.get("action")
-                                })
-                            elif data.get("type") == "task_output":
-                                final_response_data = data.get("output", {})
-                        except json.JSONDecodeError:
-                            pass
-                
-                if not final_response_data:
-                    final_response_data = {"result": "No final output returned by agent"}
+                next_agent = None
+                if index < len(agents) - 1:
+                    next_agent = agents[index + 1]
                     
-                next_agent = final_response_data.get("next_agent") or (agents[index + 1] if index + 1 < len(agents) else None)
-                summary = final_response_data.get("summary") or final_response_data.get("result") or "Agent completed."
-                results.append(final_response_data)
+                results.append(data)
                 
                 await broadcast({
                     "event": "agent_finished",
@@ -251,8 +280,9 @@ async def run_task(task: Task):
                     "next_agent": next_agent,
                 })
             except Exception as e:
+                has_error = True
                 summary = f"Agent {agent} is not reachable at {url} or failed. Error: {str(e)}"
-                results.append({"error": summary, "task_id": task_id})
+                results.append({"error": summary, "task_id": task_id, "status": "error"})
                 await broadcast({
                     "event": "agent_finished",
                     "agent": agent,
@@ -261,8 +291,12 @@ async def run_task(task: Task):
                     "next_agent": None,
                 })
 
-    await broadcast({"event": "pipeline_complete", "task_id": task_id})
-    return {'task_id': task_id, 'agents_used': agents, 'results': results}
+    return {
+        "status": "error" if has_error else "success",
+        "task_id": task_id,
+        "agents_used": agents,
+        "results": results
+    }
 
 if __name__ == "__main__":
     import uvicorn

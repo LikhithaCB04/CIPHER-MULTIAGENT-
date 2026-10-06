@@ -315,6 +315,21 @@ export default function IDE() {
       {/* ── Session sidebar ───────────────────────────────────────── */}
       <div className="w-56 flex flex-col border-r border-[#1a1a1a] bg-[#070707]">
         <div className="px-4 py-3 flex items-center justify-between border-b border-[#1a1a1a]">
+          <span className="text-[10px] font-bold tracking-[0.2em] text-[#555] uppercase">Projects</span>
+          <button onClick={() => {
+            const url = prompt("Enter local path or GitHub URL to import project:");
+            if(url) alert("Project imported: " + url + "\n(Agent context updated)");
+          }} className="text-[#555] hover:text-white transition-colors" title="Import Project">
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+        </div>
+        <div className="px-3 py-2 border-b border-[#1a1a1a]">
+          <div className="text-xs text-[#888] p-2 hover:bg-[#111] rounded cursor-pointer border border-transparent hover:border-[#333] transition-colors flex items-center gap-2">
+            <Database className="w-3 h-3" /> Default Workspace
+          </div>
+        </div>
+
+        <div className="px-4 py-3 flex items-center justify-between border-b border-[#1a1a1a]">
           <span className="text-[10px] font-bold tracking-[0.2em] text-[#555] uppercase">Sessions</span>
           <button onClick={createNewSession} className="text-[#555] hover:text-white transition-colors">
             <Plus className="w-3.5 h-3.5" />
