@@ -74,6 +74,9 @@
 textarea::-webkit-scrollbar { display: none; }
 textarea { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Hide scrollbar for elements with scrollbar-hide class */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
 html, body, #root {
   width: 100%;

@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Send, Paperclip, ChevronDown, Cpu, Plus, MessageSquare,
   Server, Shield, Database, Code, Cloud, Activity,
-  CheckCircle2, XCircle, Loader2, Wifi, WifiOff, Trash2, X, FileText
+  CheckCircle2, XCircle, Loader2, Wifi, WifiOff, Trash2, X, FileText,
+  Copy, ThumbsUp, ThumbsDown
 } from 'lucide-react';
 import CanvasApp from './CanvasApp';
 
@@ -117,6 +118,14 @@ export default function IDE() {
 
   // ─── WebSocket for live agent events ──────────────────────────────
   const [activeConfirmations, setActiveConfirmations] = useState<any[]>([]);
+
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopy = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   useEffect(() => {
     const connect = () => {
@@ -345,6 +354,7 @@ export default function IDE() {
                 key={s.id}
                 initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.95 }}
                 onClick={() => setCurrentSessionId(s.id)}
+                title={`Updated ${new Date(s.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })}`}
                 className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all text-xs font-mono min-w-0 ${
                   s.id === currentSessionId
                     ? 'bg-[#1a1a1a] text-white'
@@ -363,7 +373,7 @@ export default function IDE() {
       </div>
 
       {/* ── Chat panel (now in middle) ───────────────────────────────────────────────── */}
-      <div className="w-[450px] shrink-0 flex flex-col bg-[#070707] border-r border-[#1a1a1a]">
+      <div className="flex-1 min-w-[400px] flex flex-col bg-[#070707] border-r border-[#1a1a1a]">
 
         {/* Chat header + model selector */}
         <div className="h-12 border-b border-[#1a1a1a] flex items-center justify-between px-4">
@@ -399,7 +409,7 @@ export default function IDE() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto scrollbar-hide px-4 py-4 space-y-4">
           <AnimatePresence initial={false}>
             {currentSession?.messages.map(msg => (
               <motion.div key={msg.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
@@ -445,6 +455,30 @@ export default function IDE() {
                         </motion.div>
                       );
                     })}
+                  </div>
+                )}
+
+                {/* Action buttons (Copy, Like, Dislike) */}
+                {msg.role !== 'user' && (
+                  <div className="flex items-center gap-1 mt-1.5 ml-2 text-[#555]">
+                    <button onClick={() => handleCopy(msg.id, msg.content)} className="hover:text-white transition-colors p-1.5 rounded border border-transparent hover:border-[#333] hover:bg-[#1a1a1a] cursor-pointer" title={copiedId === msg.id ? "Copied!" : "Copy"}>
+                      {copiedId === msg.id ? <CheckCircle2 className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                    <button className="hover:text-emerald-400 transition-colors p-1.5 rounded border border-transparent hover:border-emerald-900 hover:bg-emerald-950/30 cursor-pointer" title="Good response">
+                      <ThumbsUp className="w-3.5 h-3.5" />
+                    </button>
+                    <button className="hover:text-rose-400 transition-colors p-1.5 rounded border border-transparent hover:border-rose-900 hover:bg-rose-950/30 cursor-pointer" title="Bad response">
+                      <ThumbsDown className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+                
+                {/* User message action buttons */}
+                {msg.role === 'user' && (
+                  <div className="flex items-center gap-1 mt-1.5 mr-2 text-[#555]">
+                    <button onClick={() => handleCopy(msg.id, msg.content)} className="hover:text-white transition-colors p-1.5 rounded border border-transparent hover:border-[#333] hover:bg-[#1a1a1a] cursor-pointer" title={copiedId === msg.id ? "Copied!" : "Copy"}>
+                      {copiedId === msg.id ? <CheckCircle2 className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
                   </div>
                 )}
               </motion.div>
@@ -520,7 +554,7 @@ export default function IDE() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col bg-[#050505]">
+      <div className="w-[450px] shrink-0 flex flex-col bg-[#050505]">
         {/* Header */}
         <div className="h-12 border-b border-[#1a1a1a] flex items-center justify-between px-5 bg-[#080808]">
           <span className="text-[10px] font-bold tracking-[0.25em] text-[#555] uppercase">Live Agent Canvas</span>
@@ -537,7 +571,7 @@ export default function IDE() {
 
         {/* Canvas Area */}
         {(Object.keys(agentStates).length > 0) && (
-          <div className="w-[450px] border-l border-[#1a1a1a] relative bg-[#050505] flex-shrink-0">
+          <div className="flex-1 w-full border-t border-[#1a1a1a] relative bg-[#050505] overflow-hidden">
             <CanvasApp />
           </div>
         )}
