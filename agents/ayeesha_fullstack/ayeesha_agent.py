@@ -756,7 +756,7 @@ FILE: src/App.css
                                         "dev",
                                         "--",
                                         "--host",
-                                        "127.0.0.1",
+                                        "0.0.0.0",
                                         "--port",
                                         "5174",
                                         "--strictPort"

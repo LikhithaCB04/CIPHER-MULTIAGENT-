@@ -126,7 +126,8 @@ services:
     volumes:
       - ./workspace:/app/workspace
     ports:
-    - 8002:8002
+    - "8002:8002"
+    - "5174:5174"
     healthcheck:
       test:
       - CMD
