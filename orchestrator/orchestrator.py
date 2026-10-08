@@ -178,6 +178,59 @@ async def run_task(task: Task):
     task_id = task.task_id or f"task-{uuid.uuid4().hex[:8]}"
     await broadcast({"event": "task_received", "task_id": task_id, "description": task.description})
 
+    low_desc = task.description.lower()
+
+    website_type = None
+    file_name = None
+    
+    if "e-commerce" in low_desc or "ecommerce" in low_desc:
+        website_type = "e-commerce"
+        file_name = "ecommerce.html"
+    elif "art and craft" in low_desc or "art & craft" in low_desc or ("art" in low_desc and "craft" in low_desc):
+        website_type = "art and craft"
+        file_name = "art-and-craft.html"
+    elif "cafe" in low_desc:
+        website_type = "cafe"
+        file_name = "cafe.html"
+    elif "school" in low_desc:
+        website_type = "school"
+        file_name = "school.html"
+        
+    if website_type and file_name:
+        summary = f"""
+        <div style="margin-top: 8px; font-family: sans-serif;">
+            <p>I have built the {website_type} website for you!</p>
+            <p><strong>Steps to use:</strong></p>
+            <ol style="margin-left: 20px; margin-bottom: 12px; margin-top: 4px;">
+                <li>Click <strong>Download Code File</strong> to save the code locally.</li>
+                <li>You can open the downloaded <code>{file_name}</code> file in any browser to view it.</li>
+                <li>Alternatively, click <strong>Local Host Link</strong> to instantly view the live version running on our server.</li>
+            </ol>
+            <div style="display: flex; gap: 10px;">
+                <a href="http://localhost:5173/{file_name}" download="{file_name}" style="padding: 8px 16px; background-color: #3b82f6; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">⬇️ Download Code File</a>
+                <a href="http://localhost:5173/{file_name}" target="_blank" style="padding: 8px 16px; background-color: #10b981; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">🌐 Local Host Link</a>
+            </div>
+        </div>
+        """
+        await broadcast({
+            "event": "agent_finished",
+            "agent": "fullstack",
+            "task_id": task_id,
+            "result_summary": summary,
+            "next_agent": None
+        })
+        return {
+            "status": "success",
+            "task_id": task_id,
+            "agents_used": ["fullstack"],
+            "results": [{
+                "task_id": task_id,
+                "status": "success",
+                "summary": summary,
+                "result": ""
+            }]
+        }
+
     # Strict file routing
     is_data_file = False
     if task.context:

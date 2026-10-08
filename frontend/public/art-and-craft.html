@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rang Studio – Art, Craft &amp; Workshops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&family=Young+Serif&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#26252e;--muted:#74727e;--line:#e9e8ee;--accent:#5d5f8d;--accent-d:#47496f;--soft:#f5f5f9}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{font-family:Outfit,"Segoe UI",system-ui,sans-serif;color:var(--ink);background:#fff;line-height:1.6}
+h1,h2,h3,.brand{font-family:"Young Serif",Georgia,serif;font-weight:400}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1120px;margin:auto;padding:0 24px}
+section{padding:80px 0}
+h2{font-size:clamp(1.8rem,3.6vw,2.6rem);line-height:1.12;margin-bottom:10px}
+.lead{color:var(--muted);max-width:540px;margin-bottom:32px}
+header{position:sticky;top:0;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);z-index:10}
+.nav{display:flex;align-items:center;height:66px;gap:24px}
+.brand{font-size:1.5rem;color:var(--ink);text-decoration:none}
+nav{margin-left:auto;display:flex;gap:24px;align-items:center}
+nav a{color:var(--ink);text-decoration:none;font-size:.95rem}
+nav a:hover{color:var(--accent)}
+.btn{display:inline-block;background:var(--accent);color:#fff!important;border:0;border-radius:999px;padding:12px 26px;font-weight:500;cursor:pointer;text-decoration:none;transition:background .2s,transform .2s}
+.btn:hover{background:var(--accent-d);transform:translateY(-1px)}
+.btn.ghost{background:#fff;color:var(--accent)!important;border:1px solid var(--accent)}
+.btn.ghost:hover{background:var(--soft)}
+.burger{display:none;margin-left:auto;background:none;border:0;font-size:1.6rem;cursor:pointer}
+.pic{position:relative;overflow:hidden;border-radius:14px}
+.pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .6s}
+.pic:hover img{transform:scale(1.05)}
+.pic .fb{position:absolute;inset:0;display:grid;place-items:center;font-size:3.2rem}
+/* hero */
+.hero{padding:56px 0 40px}
+.hero .wrap{display:grid;grid-template-columns:1fr 1.1fr;gap:56px;align-items:center}
+.hero h1{font-size:clamp(2.5rem,5.5vw,4.3rem);line-height:1.04;letter-spacing:-.01em}
+.hero p{color:var(--muted);font-size:1.1rem;margin:18px 0 28px;max-width:440px}
+.actions{display:flex;gap:12px;flex-wrap:wrap}
+.collage{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:200px 200px;gap:14px}
+.collage .pic:first-child{grid-row:span 2}
+/* gallery */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:26px}
+.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 20px;cursor:pointer;transition:all .2s}
+.tab:hover{border-color:var(--accent)}
+.tab[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+.gal{columns:3 260px;column-gap:18px}
+.work{break-inside:avoid;margin-bottom:18px;cursor:pointer;display:block;width:100%;border:0;background:none;padding:0;text-align:left}
+.work .pic{width:100%}
+.work h3{font-size:1.05rem;margin-top:10px}
+.meta{color:var(--muted);font-size:.88rem}
+/* lightbox */
+.lb{position:fixed;inset:0;background:rgba(38,37,46,.85);display:none;place-items:center;z-index:30;padding:20px}
+.lb.open{display:grid}
+.lb .box{background:#fff;border-radius:16px;max-width:560px;width:100%;overflow:hidden}
+.lb .pic{border-radius:0;aspect-ratio:1}
+.lb .info{padding:20px 24px}
+.lb .info h3{font-size:1.4rem}
+.lb .row{display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px;flex-wrap:wrap}
+.x{position:absolute;top:16px;right:20px;background:none;border:0;color:#fff;font-size:2rem;cursor:pointer}
+/* workshops */
+.alt{background:var(--soft)}
+.ws{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px;display:flex;flex-direction:column}
+.card .ic{font-size:2rem}
+.card h3{font-size:1.25rem;margin:6px 0}
+.card p{color:var(--muted);font-size:.95rem;flex:1}
+.card .foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px;gap:8px}
+.price{font-weight:600}
+.seats{font-size:.8rem;color:var(--accent)}
+/* about */
+.about .wrap{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+.about .pic{aspect-ratio:4/5}
+.about p{color:var(--muted);margin-bottom:14px}
+.facts{display:flex;gap:32px;margin-top:20px;flex-wrap:wrap}
+.facts b{display:block;font-family:"Young Serif",serif;font-size:1.8rem;color:var(--accent);font-weight:400}
+.facts span{font-size:.9rem;color:var(--muted)}
+/* contact */
+.contact .wrap{display:grid;grid-template-columns:1fr 1.1fr;gap:56px}
+form{display:grid;gap:14px;background:var(--soft);padding:28px;border-radius:18px}
+label{font-size:.9rem;font-weight:500;display:block}
+input,select,textarea{width:100%;padding:11px 14px;border:1px solid #d9d8e2;border-radius:10px;margin-top:4px;background:#fff;font-weight:400}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.err{color:#b3392f;font-size:.8rem;min-height:1em;display:block;font-weight:400}
+.ok{background:var(--soft);border-radius:18px;padding:28px}
+.contact p{margin:6px 0;color:var(--muted)}
+footer{border-top:1px solid var(--line);padding:30px 0;color:var(--muted);font-size:.9rem}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+@media (max-width:820px){
+  .hero .wrap,.about .wrap,.contact .wrap{grid-template-columns:1fr}
+  .collage{grid-template-rows:160px 160px}
+  .burger{display:block}
+  nav{display:none;position:absolute;top:66px;left:0;right:0;background:#fff;flex-direction:column;align-items:flex-start;padding:16px 24px;border-bottom:1px solid var(--line);gap:14px}
+  nav.open{display:flex}
+  section{padding:56px 0}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+</style>
+</head>
+<body>
+<header><div class="wrap nav">
+  <a class="brand" href="#top">Rang Studio</a>
+  <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false">☰</button>
+  <nav id="nav">
+    <a href="#gallery">Gallery</a><a href="#workshops">Workshops</a><a href="#about">About</a>
+    <a class="btn" href="#contact">Get in touch</a>
+  </nav>
+</div></header>
+
+<section class="hero" id="top"><div class="wrap">
+  <div>
+    <h1>Handmade art, made to be lived with</h1>
+    <p>Paintings, pottery, paper art and textile pieces made in our small studio. Browse the gallery, join a workshop, or ask for something made just for you.</p>
+    <div class="actions"><a class="btn" href="#gallery">View the gallery</a><a class="btn ghost" href="#workshops">Join a workshop</a></div>
+  </div>
+  <div class="collage">
+    <div class="pic" style="background:#e4e5f1" data-img="images/hero1.jpg" data-icon="🎨"></div>
+    <div class="pic" style="background:#f1e6e1" data-img="images/hero2.jpg" data-icon="🏺"></div>
+    <div class="pic" style="background:#e2eee9" data-img="images/hero3.jpg" data-icon="✂️"></div>
+  </div>
+</div></section>
+
+<section id="gallery" style="padding-top:48px"><div class="wrap">
+  <h2>Gallery</h2>
+  <p class="lead">Select a piece to see details. Everything is handmade, so each one is slightly different.</p>
+  <div class="tabs" id="tabs"></div>
+  <div class="gal" id="gal"></div>
+</div></section>
+
+<section class="alt" id="workshops"><div class="wrap">
+  <h2>Workshops</h2>
+  <p class="lead">No experience needed. All materials are included, and groups are small.</p>
+  <div class="ws" id="ws"></div>
+</div></section>
+
+<section class="about" id="about"><div class="wrap">
+  <div class="pic" style="background:#ecebf4" data-img="images/artist.jpg" data-icon="🧑‍🎨"></div>
+  <div>
+    <h2>Made slowly, by hand</h2>
+    <p>Rang Studio was started by a small group of artists who wanted to make things that feel personal. Every painting, pot and paper piece is made in our studio, using natural and recycled materials wherever we can.</p>
+    <p>We also teach. Our workshops are friendly and unhurried, for beginners, families and anyone who wants to make something with their hands.</p>
+    <div class="facts"><div><b>8+</b><span>Years in the studio</span></div><div><b>1,200</b><span>Pieces made</span></div><div><b>40+</b><span>Workshops a year</span></div></div>
+  </div>
+</div></section>
+
+<section class="alt contact" id="contact"><div class="wrap">
+  <div>
+    <h2>Say hello</h2>
+    <p class="lead" style="margin-bottom:16px">Ask about a piece, book a workshop, or tell us about a custom idea.</p>
+    <p><b style="color:var(--ink)">Studio</b><br>7 Artists' Lane, Your City</p>
+    <p><b style="color:var(--ink)">Open</b><br>Tuesday to Sunday, 11 am – 7 pm</p>
+    <p><b style="color:var(--ink)">Phone</b><br>+91 98765 43210</p>
+    <p><b style="color:var(--ink)">Email</b><br>hello@rangstudio.example</p>
+  </div>
+  <div id="formbox">
+    <form id="f" novalidate>
+      <label>I would like to<select id="c-type"><option>Book a workshop</option><option>Buy or ask about a piece</option><option>Order a custom piece</option><option>Something else</option></select></label>
+      <div class="row2">
+        <label>Name<input id="c-name" autocomplete="name"><span class="err" id="e-c-name"></span></label>
+        <label>Phone or email<input id="c-contact"><span class="err" id="e-c-contact"></span></label>
+      </div>
+      <label>Message<textarea id="c-msg" rows="4" placeholder="Tell us a little about what you have in mind"></textarea><span class="err" id="e-c-msg"></span></label>
+      <button class="btn" type="submit">Send message</button>
+    </form>
+  </div>
+</div></section>
+
+<footer><div class="wrap"><span>© 2026 Rang Studio</span><span>Sample website</span></div></footer>
+
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Artwork details">
+  <button class="x" id="lbx" aria-label="Close">×</button>
+  <div class="box" id="lbbox"></div>
+</div>
+
+<script>
+/* Photos: add an "images" folder next to this file using the names below.
+   Missing photos show a coloured placeholder. */
+const $=id=>document.getElementById(id);
+const pic=(img,icon,tint,extra="")=>`<div class="pic" style="background:${tint};${extra}"><div class="fb">${icon}</div><img src="${img}" alt="" loading="lazy" onerror="this.remove()"></div>`;
+document.querySelectorAll(".pic[data-img]").forEach(el=>{
+  el.innerHTML=`<div class="fb">${el.dataset.icon}</div><img src="${el.dataset.img}" alt="" loading="lazy" onerror="this.remove()">`;
+});
+
+/* ---- Edit your artworks here: [title, category, icon, tint, ratio, medium, price, image] ---- */
+const WORKS=[
+ ["Monsoon Garden","Paintings","🌿","#e2eee9","4/5","Acrylic on canvas, 60×75 cm",14500,"images/w1.jpg"],
+ ["Blue Hour","Paintings","🌆","#e4e5f1","1/1","Watercolour, 40×40 cm",6800,"images/w2.jpg"],
+ ["Morning Bowl Set","Pottery","🍵","#f1e6e1","1/1","Stoneware, set of 2",2400,"images/w3.jpg"],
+ ["Moon Vase","Pottery","🏺","#ece8f3","3/4","Glazed ceramic, 28 cm",3200,"images/w4.jpg"],
+ ["Paper Bloom Frame","Paper craft","🌸","#f3e6ec","4/5","Layered paper, 30×40 cm",3900,"images/w5.jpg"],
+ ["Origami Lantern","Paper craft","🏮","#f4eedc","1/1","Handmade paper, 25 cm",1200,"images/w6.jpg"],
+ ["Woven Wall Hanging","Textile","🧶","#e6eef2","3/4","Cotton and jute, 50×80 cm",5200,"images/w7.jpg"],
+ ["Block-print Cushion","Textile","🛋️","#e9ecdf","1/1","Cotton, 40×40 cm",1400,"images/w8.jpg"],
+ ["Sunrise Study","Paintings","🌅","#f4e9de","4/3","Oil on board, 30×22 cm",4800,"images/w9.jpg"]
+];
+const CATS=["All",...new Set(WORKS.map(w=>w[1]))];let cat="All";
+const fmt=n=>"₹"+n.toLocaleString("en-IN");
+function drawGal(){
+  $("tabs").innerHTML=CATS.map(c=>`<button class="tab" aria-pressed="${c===cat}" data-c="${c}">${c}</button>`).join("");
+  $("gal").innerHTML=WORKS.map((w,i)=>({w,i})).filter(o=>cat==="All"||o.w[1]===cat).map(({w,i})=>
+   `<button class="work" data-i="${i}" aria-label="View ${w[0]}">${pic(w[7],w[2],w[3],`aspect-ratio:${w[4]}`)}<h3>${w[0]}</h3><div class="meta">${w[1]} · ${fmt(w[6])}</div></button>`).join("");
+}
+$("tabs").onclick=e=>{const b=e.target.closest(".tab");if(b){cat=b.dataset.c;drawGal()}};
+$("gal").onclick=e=>{
+  const b=e.target.closest(".work");if(!b)return;
+  const w=WORKS[+b.dataset.i];
+  $("lbbox").innerHTML=`${pic(w[7],w[2],w[3])}<div class="info"><h3>${w[0]}</h3><div class="meta">${w[1]} · ${w[5]}</div>
+   <div class="row"><b style="font-size:1.2rem">${fmt(w[6])}</b><a class="btn" href="#contact" id="enq" data-t="${w[0]}">Ask about this piece</a></div></div>`;
+  $("lb").classList.add("open");
+  $("enq").onclick=()=>{$("lb").classList.remove("open");$("c-type").value="Buy or ask about a piece";$("c-msg").value=`Hi, I'm interested in "${w[0]}". Is it available?`};
+};
+const closeLb=()=>$("lb").classList.remove("open");
+$("lbx").onclick=closeLb;$("lb").onclick=e=>{if(e.target===$("lb"))closeLb()};
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeLb()});
+drawGal();
+
+/* ---- Workshops: [title, icon, description, price, seats left] ---- */
+const WS=[
+ ["Beginner watercolour","🎨","Learn washes, blending and simple landscapes. Paper and paints provided.",1200,"Saturdays, 3 hours","6 seats left"],
+ ["Pottery on the wheel","🏺","Centre the clay, shape a bowl and glaze it. Your piece is fired for you.",2200,"Sundays, 3 hours","4 seats left"],
+ ["Paper craft evening","✂️","Make a layered paper frame to take home. Relaxed and chatty.",900,"Fridays, 2 hours","8 seats left"],
+ ["Kids' art morning","🖍️","Painting, collage and clay play for ages 6 to 12.",700,"Sundays, 2 hours","10 seats left"]
+];
+$("ws").innerHTML=WS.map((w,i)=>`<div class="card"><div class="ic">${w[1]}</div><h3>${w[0]}</h3><p>${w[2]}</p><div class="meta" style="margin-top:10px">${w[4]}</div>
+ <div class="foot"><div><span class="price">${fmt(w[3])}</span><div class="seats">${w[5]}</div></div><a class="btn ghost" href="#contact" data-w="${i}">Book</a></div></div>`).join("");
+$("ws").onclick=e=>{const a=e.target.closest("[data-w]");if(a){const w=WS[+a.dataset.w];$("c-type").value="Book a workshop";$("c-msg").value=`Hi, I'd like to book "${w[0]}". Please share the next available dates.`}};
+
+/* ---- Menu + form ---- */
+$("burger").onclick=()=>{const o=$("nav").classList.toggle("open");$("burger").setAttribute("aria-expanded",o)};
+$("nav").onclick=e=>{if(e.target.tagName==="A")$("nav").classList.remove("open")};
+$("f").onsubmit=e=>{
+  e.preventDefault();
+  const v=id=>$(id).value.trim();
+  const r={"c-name":[v("c-name").length>1,"Enter your name."],
+    "c-contact":[/^\S+@\S+\.\S+$/.test(v("c-contact"))||/^[+\d][\d\s-]{8,14}$/.test(v("c-contact")),"Enter a valid phone number or email."],
+    "c-msg":[v("c-msg").length>9,"Write a short message (at least 10 characters)."]};
+  let ok=true;
+  for(const k in r){$("e-"+k).textContent=r[k][0]?"":r[k][1];if(!r[k][0])ok=false}
+  if(!ok)return;
+  $("formbox").innerHTML=`<div class="ok"><h3 style="font-size:1.4rem">Message sent</h3><p style="margin-top:8px;color:var(--muted)">Thank you, ${v("c-name").split(" ")[0]}. We will reply to ${v("c-contact")} within one working day.</p></div>`;
+};
+</script>
+</body>
+</html>

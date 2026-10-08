@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kaveri Home – Handmade Home Goods</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1c2630;--muted:#6b7785;--line:#e8ebef;--accent:#4a6b7c;--accent-d:#375260;--soft:#eef3f6}
+*{box-sizing:border-box;margin:0}
+body{font-family:"DM Sans","Segoe UI",system-ui,sans-serif;color:var(--ink);background:#fff;line-height:1.55}
+h1,h2,.logo{font-family:"DM Serif Display",Georgia,serif;font-weight:400}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:auto;padding:0 24px}
+.promo{background:var(--accent);color:#fff;text-align:center;font-size:.85rem;padding:8px}
+header{position:sticky;top:0;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);z-index:5}
+.bar{display:flex;align-items:center;gap:20px;padding:14px 24px;max-width:1180px;margin:auto}
+.logo{font-size:1.6rem}
+.bar input[type=search]{flex:1;max-width:340px;margin-left:auto;padding:10px 16px;border:1px solid var(--line);border-radius:999px;background:var(--soft)}
+.cartbtn{background:var(--ink);color:#fff;border:0;border-radius:999px;padding:10px 20px;cursor:pointer;transition:background .2s}
+.cartbtn:hover{background:var(--accent)}
+/* hero */
+.hero{display:grid;grid-template-columns:1.05fr 1fr;gap:48px;align-items:center;padding:56px 24px 40px;max-width:1180px;margin:auto}
+.hero h1{font-size:clamp(2.4rem,5vw,4rem);line-height:1.05;letter-spacing:-.01em}
+.hero p{color:var(--muted);margin:18px 0 28px;max-width:440px;font-size:1.05rem}
+.cta{display:inline-block;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:14px 28px;cursor:pointer;text-decoration:none;font-weight:500;transition:background .2s,transform .2s}
+.cta:hover{background:var(--accent-d);transform:translateY(-2px)}
+.heroimg{position:relative;aspect-ratio:4/5;border-radius:24px;overflow:hidden;background:linear-gradient(145deg,#dfe9ee,#c3d3dc)}
+.heroimg img{width:100%;height:100%;object-fit:cover;display:block}
+.heroimg .fb{position:absolute;inset:0;display:grid;place-items:center;font-size:7rem}
+/* trust strip */
+.trust{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:20px 24px;max-width:1180px;margin:0 auto 24px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.trust div{font-size:.9rem;color:var(--muted)}
+.trust b{display:block;color:var(--ink);font-size:.95rem}
+/* shop */
+.head{display:flex;align-items:end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:32px 24px 8px;max-width:1180px;margin:auto}
+.head h2{font-size:2.2rem}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;max-width:1180px;margin:auto;padding:8px 24px 16px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 18px;cursor:pointer;transition:all .2s}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+.tools select{margin-left:auto;border:1px solid var(--line);border-radius:999px;padding:7px 14px;background:#fff}
+.grid{max-width:1180px;margin:auto;padding:8px 24px 72px;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:28px}
+.card{position:relative}
+.img{position:relative;aspect-ratio:1/1.1;border-radius:16px;overflow:hidden}
+.img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s}
+.card:hover .img img,.card:hover .img .fb{transform:scale(1.06)}
+.fb{position:absolute;inset:0;display:grid;place-items:center;font-size:4.5rem;transition:transform .5s}
+.badge{position:absolute;top:12px;left:12px;background:#fff;border-radius:999px;font-size:.75rem;padding:3px 12px;font-weight:500;z-index:2}
+.heart{position:absolute;top:10px;right:10px;width:36px;height:36px;border:0;border-radius:50%;background:#fff;cursor:pointer;font-size:1.1rem;z-index:2;color:#9aa5b1;transition:transform .2s}
+.heart:hover{transform:scale(1.12)}
+.heart.on{color:#c4474b}
+.quick{position:absolute;left:12px;right:12px;bottom:12px;background:#fff;border:0;border-radius:999px;padding:10px;cursor:pointer;font-weight:500;opacity:0;transform:translateY(8px);transition:all .25s;z-index:2}
+.card:hover .quick,.quick:focus-visible{opacity:1;transform:none}
+.quick:hover{background:var(--accent);color:#fff}
+@media (hover:none){.quick{opacity:1;transform:none}}
+.card h3{font-size:1.02rem;margin-top:12px;font-weight:500}
+.meta{color:var(--muted);font-size:.875rem}
+.row{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+.stars{color:#d9a441;font-size:.85rem;letter-spacing:1px}
+.price{font-weight:700}
+.empty{grid-column:1/-1;color:var(--muted);padding:40px 0}
+/* newsletter + footer */
+.news{background:var(--soft);padding:56px 24px;text-align:center}
+.news h2{font-size:2rem}
+.news p{color:var(--muted);margin:8px 0 20px}
+.news form{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.news input{padding:12px 18px;border:1px solid var(--line);border-radius:999px;min-width:260px}
+footer{padding:28px 24px;color:var(--muted);text-align:center;font-size:.875rem}
+/* cart + modal */
+.overlay{position:fixed;inset:0;background:rgba(28,38,48,.4);display:none;z-index:10}
+.overlay.open{display:block}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(420px,100%);background:#fff;z-index:11;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s}
+.drawer.open{transform:none}
+.dh{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line)}
+.dh h2{font-size:1.5rem}
+.x{background:none;border:0;font-size:1.6rem;cursor:pointer}
+.items{flex:1;overflow:auto;padding:8px 22px}
+.item{display:flex;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.item .t{position:relative;width:64px;height:64px;border-radius:10px;overflow:hidden;flex:none}
+.item .t img{width:100%;height:100%;object-fit:cover}
+.item .t .fb{font-size:1.8rem}
+.item .n{flex:1;font-size:.92rem}
+.qty{display:flex;align-items:center;gap:8px}
+.qty button{width:28px;height:28px;border:1px solid var(--line);background:#fff;border-radius:50%;cursor:pointer}
+.foot{padding:18px 22px;border-top:1px solid var(--line)}
+.total{display:flex;justify-content:space-between;font-weight:700;margin-bottom:14px;font-size:1.1rem}
+.primary{width:100%;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:13px;cursor:pointer;font-weight:500}
+.primary:hover{background:var(--accent-d)}
+.primary:disabled{opacity:.4;cursor:not-allowed}
+.modal{position:fixed;inset:0;display:none;place-items:center;z-index:12;padding:16px}
+.modal.open{display:grid}
+.box{background:#fff;border-radius:20px;padding:28px;width:min(460px,100%);max-height:92vh;overflow:auto}
+.box h2{font-size:1.8rem}
+.box label{display:block;font-size:.875rem;margin-top:12px}
+.box input{width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:10px;margin-top:4px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.err{color:#b3392f;font-size:.8rem;min-height:1em}
+.box .primary{margin-top:18px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,80px);background:var(--ink);color:#fff;padding:12px 22px;border-radius:999px;z-index:20;transition:transform .3s;font-size:.9rem}
+.toast.show{transform:translate(-50%,0)}
+@media (max-width:800px){.hero{grid-template-columns:1fr;gap:28px;padding-top:32px}.heroimg{aspect-ratio:4/3}.trust{grid-template-columns:1fr 1fr}.bar input[type=search]{display:none}.cartbtn{margin-left:auto}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="promo">Free delivery on orders over ₹1,999</div>
+<header><div class="bar">
+  <div class="logo">Kaveri Home</div>
+  <input type="search" id="q" placeholder="Search products" aria-label="Search products">
+  <button class="cartbtn" id="openCart">Cart (<span id="count">0</span>)</button>
+</div></header>
+
+<section class="hero">
+  <div>
+    <h1>Make your home feel handmade</h1>
+    <p>Pottery, textiles and wooden pieces from small studios across India, chosen for how they look and how long they last.</p>
+    <a class="cta" href="#shop">Shop the collection</a>
+  </div>
+  <div class="heroimg" id="hero"></div>
+</section>
+
+<div class="trust">
+  <div><b>Made by hand</b>Small studios, real makers</div>
+  <div><b>Free delivery</b>On orders over ₹1,999</div>
+  <div><b>Easy returns</b>7 days, no questions</div>
+  <div><b>Secure checkout</b>Your details stay private</div>
+</div>
+
+<div class="head" id="shop"><h2>The collection</h2><span class="meta" id="results"></span></div>
+<div class="tools" id="tools">
+  <select id="sort" aria-label="Sort products">
+    <option value="featured">Featured</option>
+    <option value="low">Price: low to high</option>
+    <option value="high">Price: high to low</option>
+  </select>
+</div>
+<main class="grid" id="grid"></main>
+
+<section class="news">
+  <h2>Get 10% off your first order</h2>
+  <p>New pieces and studio stories, once a month.</p>
+  <form id="nf"><input type="email" required placeholder="Your email" aria-label="Email"><button class="cta">Subscribe</button></form>
+</section>
+<footer>© 2026 Kaveri Home · Demo store, no real orders are placed.</footer>
+
+<div class="overlay" id="overlay"></div>
+<aside class="drawer" id="drawer" aria-label="Shopping cart">
+  <div class="dh"><h2>Your cart</h2><button class="x" id="closeCart" aria-label="Close cart">×</button></div>
+  <div class="items" id="items"></div>
+  <div class="foot">
+    <div class="total"><span>Total</span><span id="total">₹0</span></div>
+    <button class="primary" id="checkout">Go to checkout</button>
+  </div>
+</aside>
+<div class="modal" id="modal"><div class="box" id="box"></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ---------- EDIT HERE ----------
+   img: a file path (e.g. "images/mug.jpg") or a full image URL.
+   If an image is missing, a tinted placeholder shows instead. */
+const HERO_IMG="images/hero.jpg";
+const PRODUCTS=[
+ {id:1,name:"Hand-thrown mug",cat:"Kitchen",price:450,icon:"☕",tint:"#e3ecf1",note:"Stoneware, 300 ml",rating:5,badge:"Bestseller",img:"images/mug.jpg"},
+ {id:2,name:"Serving bowl set",cat:"Kitchen",price:1299,icon:"🥣",tint:"#ece8f1",note:"Set of 3, glazed",rating:4,img:"images/bowls.jpg"},
+ {id:3,name:"Teak cutting board",cat:"Kitchen",price:899,icon:"🪵",tint:"#f1ebe3",note:"Oiled, 35 cm",rating:5,img:"images/board.jpg"},
+ {id:4,name:"Block-print cushion",cat:"Textiles",price:749,icon:"🛋️",tint:"#e3eef0",note:"Cotton, 40×40 cm",rating:4,badge:"New",img:"images/cushion.jpg"},
+ {id:5,name:"Handloom throw",cat:"Textiles",price:2199,icon:"🧣",tint:"#e8edf3",note:"Soft cotton blend",rating:5,badge:"Bestseller",img:"images/throw.jpg"},
+ {id:6,name:"Linen table runner",cat:"Textiles",price:1099,icon:"🧵",tint:"#eef0e6",note:"180 cm, natural",rating:4,img:"images/runner.jpg"},
+ {id:7,name:"Terracotta planter",cat:"Decor",price:599,icon:"🪴",tint:"#f1e6df",note:"With drainage tray",rating:5,img:"images/planter.jpg"},
+ {id:8,name:"Brass diya lamp",cat:"Decor",price:1450,icon:"🪔",tint:"#f2ecd9",note:"Polished, 12 cm",rating:5,badge:"New",img:"images/diya.jpg"},
+ {id:9,name:"Soy candle jar",cat:"Decor",price:650,icon:"🕯️",tint:"#f0e6e8",note:"Sandalwood, 40 hr burn",rating:4,img:"images/candle.jpg"},
+ {id:10,name:"Woven storage basket",cat:"Decor",price:999,icon:"🧺",tint:"#ede9e0",note:"Seagrass, medium",rating:4,img:"images/basket.jpg"}
+];
+/* -------------------------------- */
+const fmt=n=>"₹"+n.toLocaleString("en-IN");
+const $=id=>document.getElementById(id);
+const get=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
+const put=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let cat="All",term="",sort="featured",cart=get("kh-cart",[]),wish=get("kh-wish",[]);
+
+function pic(p,cls){ // image with tinted fallback
+  const fb=`<div class="fb" style="background:${p.tint}">${p.icon}</div>`;
+  return `${fb}<img src="${p.img}" alt="${p.name}" loading="lazy" onerror="this.remove()">`;
+}
+$("hero").innerHTML=`<div class="fb" style="background:linear-gradient(145deg,#dfe9ee,#c3d3dc)">🏺</div><img src="${HERO_IMG}" alt="Handmade home goods" onerror="this.remove()">`;
+
+const toast=m=>{const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("show"),1800)};
+
+const cats=["All",...new Set(PRODUCTS.map(p=>p.cat))];
+cats.forEach(c=>{
+  const b=document.createElement("button");
+  b.className="chip";b.textContent=c;b.setAttribute("aria-pressed",c===cat);
+  b.onclick=()=>{cat=c;document.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed",x.textContent===c));render()};
+  $("tools").insertBefore(b,$("sort"));
+});
+$("q").oninput=e=>{term=e.target.value.toLowerCase();render()};
+$("sort").onchange=e=>{sort=e.target.value;render()};
+
+function render(){
+  let list=PRODUCTS.filter(p=>(cat==="All"||p.cat===cat)&&p.name.toLowerCase().includes(term));
+  if(sort==="low")list.sort((a,b)=>a.price-b.price);
+  if(sort==="high")list.sort((a,b)=>b.price-a.price);
+  $("results").textContent=list.length+" products";
+  $("grid").innerHTML=list.length?list.map(p=>`
+    <article class="card">
+      <div class="img">${pic(p)}
+        ${p.badge?`<span class="badge">${p.badge}</span>`:""}
+        <button class="heart ${wish.includes(p.id)?"on":""}" data-w="${p.id}" aria-label="Save ${p.name}">${wish.includes(p.id)?"♥":"♡"}</button>
+        <button class="quick" data-id="${p.id}">Add to cart</button>
+      </div>
+      <h3>${p.name}</h3>
+      <div class="meta">${p.note}</div>
+      <div class="row"><span class="price">${fmt(p.price)}</span><span class="stars" aria-label="${p.rating} out of 5">${"★".repeat(p.rating)}${"☆".repeat(5-p.rating)}</span></div>
+    </article>`).join(""):`<p class="empty">No products match your search. Try a different word or category.</p>`;
+}
+$("grid").onclick=e=>{
+  const q=e.target.closest(".quick"),h=e.target.closest(".heart");
+  if(q)addItem(+q.dataset.id);
+  if(h){const id=+h.dataset.w;wish=wish.includes(id)?wish.filter(x=>x!==id):[...wish,id];put("kh-wish",wish);render();toast(wish.includes(id)?"Saved to wishlist":"Removed from wishlist")}
+};
+
+function addItem(id){
+  const it=cart.find(c=>c.id===id);
+  it?it.qty++:cart.push({id,qty:1});
+  put("kh-cart",cart);drawCart();
+  toast(PRODUCTS.find(p=>p.id===id).name+" added to cart");
+}
+function drawCart(){
+  const n=cart.reduce((s,c)=>s+c.qty,0);
+  $("count").textContent=n;
+  const total=cart.reduce((s,c)=>s+c.qty*PRODUCTS.find(p=>p.id===c.id).price,0);
+  $("total").textContent=fmt(total);
+  $("checkout").disabled=!n;
+  $("items").innerHTML=n?cart.map(c=>{const p=PRODUCTS.find(x=>x.id===c.id);return `
+    <div class="item"><div class="t">${pic(p)}</div>
+    <div class="n">${p.name}<br><span class="meta">${fmt(p.price)}</span></div>
+    <div class="qty"><button data-a="dec" data-id="${p.id}" aria-label="Decrease">−</button>${c.qty}
+    <button data-a="inc" data-id="${p.id}" aria-label="Increase">+</button></div></div>`}).join(""):
+    `<p class="empty" style="padding:28px 0">Your cart is empty. Add something you like from the collection.</p>`;
+}
+$("items").onclick=e=>{
+  const b=e.target.closest("button");if(!b)return;
+  const it=cart.find(c=>c.id===+b.dataset.id);
+  if(b.dataset.a==="inc")it.qty++;
+  else{it.qty--;if(it.qty<=0)cart=cart.filter(c=>c!==it)}
+  put("kh-cart",cart);drawCart();
+};
+const openDrawer=()=>{$("drawer").classList.add("open");$("overlay").classList.add("open")};
+const closeAll=()=>{$("drawer").classList.remove("open");$("overlay").classList.remove("open");$("modal").classList.remove("open")};
+$("openCart").onclick=openDrawer;$("closeCart").onclick=closeAll;$("overlay").onclick=closeAll;
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeAll()});
+$("nf").onsubmit=e=>{e.preventDefault();e.target.reset();toast("Thanks for subscribing")};
+
+$("checkout").onclick=()=>{
+  const total=cart.reduce((s,c)=>s+c.qty*PRODUCTS.find(p=>p.id===c.id).price,0);
+  const ship=total>=1999?0:99;
+  $("box").innerHTML=`
+    <h2>Checkout</h2>
+    <p class="meta">Subtotal ${fmt(total)} · Delivery ${ship?fmt(ship):"Free"} · <b>Pay ${fmt(total+ship)}</b></p>
+    <label>Full name<input id="f-name" autocomplete="name"><span class="err" id="e-name"></span></label>
+    <label>Email<input id="f-email" type="email" autocomplete="email"><span class="err" id="e-email"></span></label>
+    <label>Address<input id="f-addr" autocomplete="street-address"><span class="err" id="e-addr"></span></label>
+    <div class="two">
+      <label>City<input id="f-city"><span class="err" id="e-city"></span></label>
+      <label>PIN code<input id="f-pin" inputmode="numeric" maxlength="6"><span class="err" id="e-pin"></span></label>
+    </div>
+    <button class="primary" id="place">Place order</button>
+    <button class="chip" id="cancel" style="margin-top:10px;width:100%">Back to cart</button>`;
+  $("modal").classList.add("open");$("drawer").classList.remove("open");
+  $("cancel").onclick=()=>{$("modal").classList.remove("open");openDrawer()};
+  $("place").onclick=()=>{
+    const v=id=>$(id).value.trim();
+    const rules={name:[v("f-name").length>1,"Enter your full name."],
+      email:[/^\S+@\S+\.\S+$/.test(v("f-email")),"Enter a valid email address."],
+      addr:[v("f-addr").length>4,"Enter your delivery address."],
+      city:[v("f-city").length>1,"Enter your city."],
+      pin:[/^\d{6}$/.test(v("f-pin")),"Enter a 6-digit PIN code."]};
+    let ok=true;
+    for(const k in rules){$("e-"+k).textContent=rules[k][0]?"":rules[k][1];if(!rules[k][0])ok=false}
+    if(!ok)return;
+    const ref="KH"+Math.floor(100000+Math.random()*900000);
+    cart=[];put("kh-cart",cart);drawCart();
+    $("box").innerHTML=`<h2>Order placed</h2>
+      <p style="margin:8px 0 4px">Thanks, ${v("f-name").split(" ")[0]}. Your order <b>${ref}</b> is confirmed. A confirmation will be sent to ${v("f-email")}.</p>
+      <button class="primary" id="done">Continue shopping</button>`;
+    $("done").onclick=closeAll;
+  };
+};
+render();drawCart();
+</script>
+</body>
+</html>

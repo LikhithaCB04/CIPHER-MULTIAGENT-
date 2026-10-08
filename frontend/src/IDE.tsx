@@ -512,7 +512,7 @@ export default function IDE() {
                           {res.error
                             ? <div className="text-rose-400 break-words">{res.error}</div>
                             : <div className="space-y-3 opacity-90">
-                                <div>{res.summary || 'Agent completed successfully.'}</div>
+                                <div dangerouslySetInnerHTML={{ __html: res.summary || 'Agent completed successfully.' }} />
                                 {res.result && (
                                   <pre className="bg-surface p-3 rounded-lg overflow-x-auto text-[10px] text-emerald-400 border border-surfaceBorder whitespace-pre-wrap break-words">
                                     <code>{res.result}</code>
