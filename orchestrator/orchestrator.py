@@ -26,7 +26,7 @@ import os
 import asyncio
 
 class LLMProxy:
-    def __init__(self, model_name="gemini-3.8-flash", max_tokens=2500):
+    def __init__(self, model_name="gemini-3.5-flash", max_tokens=2500):
         self.model_name = model_name
         self.api_key = os.environ.get("GEMINI_API_KEY", "")
         self.url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key}"
@@ -56,7 +56,7 @@ class LLMProxy:
         except Exception as e:
             return f"Error: {str(e)}"
 
-llm = LLMProxy(model_name=os.environ.get("GROQ_ROUTER_MODEL", "gemini-3.8-flash"), max_tokens=300)
+llm = LLMProxy(model_name=os.environ.get("GROQ_ROUTER_MODEL", "gemini-3.5-flash"), max_tokens=300)
 
 connected_clients = set()
 

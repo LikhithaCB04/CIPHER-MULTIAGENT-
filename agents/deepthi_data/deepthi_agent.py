@@ -51,25 +51,37 @@ import os
 import asyncio
 
 class LLMProxy:
-    def __init__(self, model_name="command-a-03-2025", max_tokens=2500):
+    def __init__(self, model_name="gemini-3.5-flash", max_tokens=2500):
         self.model_name = model_name
-        self.api_key = os.environ.get("COHERE_API_KEY", "")
-        self.url = "https://api.cohere.ai/v1/chat"
+        self.api_key = os.environ.get("GEMINI_API_KEY", "")
+        self.url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key}"
         
     def invoke(self, prompt: str) -> str:
-        import requests
-        payload = {"message": prompt, "model": self.model_name}
-        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        import requests, os
+        payload = {"contents": [{"parts":[{"text": prompt}]}]}
         try:
-            resp = requests.post(self.url, json=payload, headers=headers)
-            data = resp.json()
-            if "text" in data:
-                return data["text"]
-            return f"Error: {data}"
+            resp = requests.post(self.url, json=payload, headers={"Content-Type": "application/json"})
+            if resp.status_code != 429:
+                try:
+                    data = resp.json()
+                    if "candidates" in data and len(data["candidates"]) > 0:
+                        return data["candidates"][0]["content"]["parts"][0]["text"]
+                except: pass
+            
+            # Fallback to Cohere if Gemini quota is exhausted
+            cohere_key = os.environ.get("COHERE_API_KEY", "")
+            if cohere_key:
+                co_res = requests.post("https://api.cohere.com/v1/chat",
+                                       headers={"Authorization": f"Bearer {cohere_key}", "Content-Type": "application/json"},
+                                       json={"model": "command-a-03-2025", "message": prompt})
+                if co_res.status_code == 200:
+                    return co_res.json()["text"]
+
+            return f"Error: Gemini API error and fallback failed. {resp.text}"
         except Exception as e:
             return f"Error: {str(e)}"
 
-llm = LLMProxy(model_name=os.environ.get("GROQ_AGENT_MODEL", "openai/gpt-oss-120b"), max_tokens=800)
+llm = LLMProxy(model_name=os.environ.get("GEMINI_MODEL", "gemini-3.5-flash"), max_tokens=800)
  
 # =============================================================================
 # SHARED API CONTRACT — matches shared/api_contracts/contract.json exactly
@@ -800,7 +812,6 @@ def run_task(task: TaskInput):
                     if "base64," in file_data:
                         b64_str = file_data.split("base64,")[1]
                         raw_bytes = base64.b64decode(b64_str)
-                        import os
                         os.makedirs('/app/workspace', exist_ok=True)
                         file_path = os.path.join('/app/workspace', file_name)
                         with open(file_path, 'wb') as bf:
